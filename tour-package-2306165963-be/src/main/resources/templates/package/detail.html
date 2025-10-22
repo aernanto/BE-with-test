@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::title}, ~{::div.content})}">
+<head>
+    <title th:text="${currentPackage.packageName}"></title>
+</head>
+<div class="content">
+    <h1 th:text="${currentPackage.packageName}">Package Name</h1>
+    
+    <div class="detail-card">
+        
+        <div class="header-info">
+            <h2 style="margin: 0; color: var(--text-dark); font-size: 1.8em;">Package Details</h2>
+            <p style="text-align: right; margin: 0;">
+                <span class="status-badge"
+                      th:text="${currentPackage.status}"
+                      th:classappend="${currentPackage.status == 'Processed' ? 'status-processed' : 'status-pending'}">
+                </span>
+            </p>
+        </div>
+
+        <div class="info-grid-detail">
+            <div class="info-item">
+                <span class="label">Package ID</span>
+                <span th:text="${currentPackage.id}" style="font-size: 0.9em; color: var(--text-muted);"></span>
+            </div>
+            <div class="info-item">
+                <span class="label">Total Price</span>
+                <span th:text="${currentPackage.formattedPrice}" style="color: var(--success-color); font-weight: 700; font-size: 1.2em;"></span>
+            </div>
+            
+            <div class="info-item">
+                <span class="label">Creator (User ID)</span>
+                <span th:text="${currentPackage.userId}"></span>
+            </div>
+            <div class="info-item">
+                <span class="label">Quota</span>
+                <span th:text="${currentPackage.quota} + ' Participants'"></span>
+            </div>
+        </div>
+
+        <h2 class="section-title">Travel Timeline</h2>
+        <div class="timeline-container">
+            <div class="timeline-point start-point">
+                <span class="timeline-label">Start: </span>
+                <span class="timeline-date" th:text="${#temporals.format(currentPackage.startDate, 'EEEE, dd MMMM yyyy (HH:mm)')}"></span>
+            </div>
+            <div class="timeline-point end-point">
+                <span class="timeline-label">End: </span>
+                <span class="timeline-date" th:text="${#temporals.format(currentPackage.endDate, 'EEEE, dd MMMM yyyy (HH:mm)')}"></span>
+            </div>
+        </div>
+        
+    </div>
+    
+    <div style="margin-top: 30px;">
+        <a th:href="@{/package}" class="btn btn-secondary">Back to List</a>
+        <a th:href="@{/package/update/{id}(id=${currentPackage.id})}" class="btn btn-primary">Edit Package</a>
+    </div>
+
+    <style>
+        .detail-card { padding: 30px; border: 1px solid var(--peach-light); border-radius: 12px; box-shadow: var(--shadow-subtle); background-color: var(--peach-soft);}
+        .header-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        .info-grid-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; border-top: 1px solid #f0f0f0; padding-top: 25px; }
+        .info-item { padding: 15px; border-left: 3px solid var(--peach-primary); background-color: white; border-radius: 4px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+        .info-item .label { display: block; font-weight: 600; color: var(--text-muted); font-size: 0.85em; margin-bottom: 5px; text-transform: uppercase; }
+
+        .section-title { color: var(--coral-accent); font-size: 1.5em; margin-top: 40px; margin-bottom: 15px;}
+        
+        /* Timeline Styling */
+        .timeline-container { display: flex; justify-content: space-between; align-items: center; position: relative; padding: 30px 0; border: 1px solid var(--peach-light); border-radius: 8px; background-color: white; }
+        .timeline-container::before { 
+            content: ''; 
+            position: absolute; 
+            top: 50%; 
+            left: 5%; 
+            right: 5%; 
+            height: 4px; 
+            background: linear-gradient(to right, var(--coral-accent), var(--peach-primary)); 
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+        .timeline-point { text-align: center; position: relative; z-index: 2; width: 45%; padding: 0 10px; }
+        .timeline-point::after { 
+            content: ''; 
+            position: absolute; 
+            top: 50%; 
+            width: 20px; 
+            height: 20px; 
+            border-radius: 50%; 
+            background-color: var(--coral-accent); 
+            border: 4px solid var(--peach-soft);
+            z-index: 3;
+            transform: translateY(-50%);
+        }
+        .start-point::after { left: 0; transform: translate(-50%, -50%); }
+        .end-point::after { right: 0; transform: translate(50%, -50%); }
+        .timeline-label { display: block; font-weight: 700; color: var(--text-muted); font-size: 0.9em; margin-bottom: 5px; }
+        .timeline-date { display: block; font-size: 1.1em; font-weight: 600; }
+    </style>
+</div>
+</html>

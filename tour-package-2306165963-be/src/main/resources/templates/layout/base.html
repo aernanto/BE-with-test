@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<div th:fragment="layout(pageTitle, content)"> 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle} ?: 'Tour Package Management'">Tour Package</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --peach-primary: #FFDAB9; /* Main Pastel Peach */
+            --peach-soft: #FFF5F0; 
+            --coral-accent: #E8A87C; /* CTA Accent */
+            --text-dark: #3a3a3a;
+            --text-muted: #6c757d;
+            --shadow-subtle: 0 4px 15px rgba(0, 0, 0, 0.08);
+            --shadow-heavy: 0 8px 25px rgba(0, 0, 0, 0.15);
+            --transition: all 0.3s ease-in-out;
+            --success-color: #28a745;
+        }
+        body {
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--peach-soft);
+            color: var(--text-dark);
+            margin: 0;
+            padding-top: 75px; /* Navbar height */
+            line-height: 1.6;
+        }
+        .navbar {
+            background: linear-gradient(90deg, #FFDAB9, #F8C8A3); /* Soft Peach Gradient */
+            padding: 18px 5%;
+            box-shadow: var(--shadow-heavy);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar a {
+            color: var(--text-dark);
+            text-decoration: none;
+            padding: 8px 15px;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+        .navbar a:hover { background-color: rgba(255, 255, 255, 0.7); }
+        .navbar .active { 
+            background-color: var(--coral-accent); 
+            color: white; 
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); 
+        }
+        .content-wrapper {
+            width: 92%;
+            max-width: 1300px;
+            margin: 40px auto;
+            padding: 40px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: var(--shadow-subtle);
+            min-height: 80vh;
+        }
+        h1 { 
+            color: var(--coral-accent); 
+            border-bottom: 2px solid var(--peach-primary); 
+            padding-bottom: 12px; 
+            margin-bottom: 35px; 
+            font-weight: 800;
+        }
+        
+        /* Alerts */
+        .alert { padding: 18px; border-radius: 8px; margin-bottom: 25px; font-weight: 600; }
+        .alert-success { background-color: #d4edda; color: #0f5132; border: 1px solid #c3e6cb; }
+        .alert-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;}
+        
+        /* Buttons (More Polished) */
+        .btn { 
+            padding: 12px 25px; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            text-decoration: none; 
+            font-weight: 600; 
+            margin: 5px 5px 5px 0; 
+            transition: var(--transition); 
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn-primary { background-color: var(--coral-accent); color: white; }
+        .btn-primary:hover { background-color: #d3976e; box-shadow: var(--shadow-heavy); transform: translateY(-1px); }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .btn-info { background-color: #17a2b8; color: white; }
+        .btn-secondary { background-color: var(--text-muted); color: white; }
+
+        /* General Form Styling */
+        .form-group { margin-bottom: 20px; }
+        .form-control { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; transition: var(--transition); }
+        .form-control:focus { border-color: var(--coral-accent); box-shadow: 0 0 0 4px rgba(232, 168, 124, 0.2); outline: none; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 700; color: var(--text-dark); }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <span style="font-size: 1.6em; font-weight: 800; color: var(--text-dark);">Tour Management</span>
+        <div>
+            <a th:href="@{/}" th:classappend="${currentUri == '/' ? 'active' : ''}">Home</a>
+            <a th:href="@{/package}" th:classappend="${#strings.startsWith(currentUri, '/package') ? 'active' : ''}">Packages</a>
+            <a th:href="@{/activities}">Activities</a> 
+            <a th:href="@{/statistics}">Statistics</a>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <div th:replace="${content}"></div>
+    </div>
+    
+    <footer style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.9em;">
+        &copy; 2025 Tour Package Management System - APAP CSIM603026
+    </footer>
+</body>
+</div> 
+</html>

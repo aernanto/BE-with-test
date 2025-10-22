@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::title}, ~{::div.content})}">
+<head>
+    <title>Home - Tour Package Management</title>
+</head>
+<div class="content">
+    <div class="welcome-section">
+        <h1 style="border: none; font-size: 3.5em; margin-bottom: 15px; color: var(--text-dark);">
+            Welcome to Your <span style="color: var(--coral-accent);">Tour Management</span> System
+        </h1>
+        <p style="color: var(--text-muted); font-size: 1.1em; margin-bottom: 0;">
+            Manage your tour packages, activities, and plans efficiently and elegantly.
+        </p>
+    </div>
+    
+    <div class="feature-grid">
+        <div class="feature-card">
+            <h2 style="color: var(--coral-accent);">Activities</h2>
+            <p style="color: var(--text-muted);">Define all available activities (flights, hotels, rentals) with pricing.</p>
+            <a th:href="@{/activities}" class="btn btn-secondary">Manage Activities</a>
+        </div>
+
+        <div class="feature-card large-card" style="border: 2px solid var(--coral-accent);">
+            <h2 style="color: var(--coral-accent); font-size: 1.8em;">Packages</h2>
+            <p style="color: var(--text-muted);">The core of your business. Create, view, and organize packages.</p>
+            <a th:href="@{/package}" class="btn btn-primary" style="font-size: 1.1em;">Manage Packages Now</a>
+        </div>
+
+        <div class="feature-card">
+            <h2 style="color: var(--coral-accent);">Statistics & Reports</h2>
+            <p style="color: var(--text-muted);">View analytics and reports for better business decisions.</p>
+            <a th:href="@{/statistics}" class="btn btn-secondary">View Reports</a>
+        </div>
+    </div>
+
+    <style>
+        .welcome-section {
+            text-align: center;
+            padding: 60px 0;
+            background-color: var(--peach-soft);
+            border-radius: 12px;
+            margin-bottom: 50px;
+            box-shadow: var(--shadow-subtle);
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+        .feature-card {
+            text-align: center;
+            padding: 35px 25px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow-subtle);
+            transition: var(--transition);
+            border: 1px solid #f0f0f0;
+        }
+        .feature-card:hover {
+            transform: translateY(-8px); /* More visible hover */
+            box-shadow: var(--shadow-heavy);
+        }
+        .feature-card h2 { margin-top: 0; }
+    </style>
+</div>
+</html>

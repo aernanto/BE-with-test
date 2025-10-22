@@ -4,18 +4,20 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
  * A simple controller to demonstrate Spring Boot MVC basics
  */
 @Controller
+@RequestMapping("/intro")
 public class HelloWorldController {
 
     /**
      * Handles GET requests to the root path (Panduan)
      * URL: http://localhost:8080/
      */
-    @GetMapping({"/"})
+    @GetMapping
     public String helloWorld (Model model) {
         model.addAttribute("message", "Hello World from Spring Boot MVC!");
         model.addAttribute("title", "Spring Boot MVC Introduction");
@@ -28,11 +30,8 @@ public class HelloWorldController {
      */
     @GetMapping("/{name}")
     public String helloWithPathParam (@PathVariable("name") String name, Model model) {
-        // Pesan disesuaikan untuk Path Parameter (sesuai contoh di dokumen)
         model.addAttribute("message", "Hello " + name + "! Welcome to Spring Boot MVC!");
         model.addAttribute("title", "Spring Boot MVC Path Param");
-        
-        // Menggunakan view yang sama
         return "hello"; 
     }
 }

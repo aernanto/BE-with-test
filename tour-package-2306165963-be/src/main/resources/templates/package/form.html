@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::title}, ~{::div.content})}" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title th:text="${isEdit} ? 'Edit Package' : 'Create New Package'">Package Form</title>
+</head>
+<div class="content">
+    <h1 th:text="${isEdit} ? 'Edit Tour Package' : 'Create New Tour Package'">Package Form</h1>
+    
+    <div class="card form-card">
+        <form th:action="${isEdit} ? @{/package/update/{id}(id=${packageId})} : @{/package/create}" th:object="${packageData}" method="POST">
+            
+            <input th:if="${isEdit}" type="hidden" name="_method" value="POST" />
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="packageName">Package Name</label>
+                    <input type="text" id="packageName" th:field="*{packageName}" class="form-control" required/>
+                </div>
+                <div class="form-group">
+                    <label for="quota">Quota (Max Participants)</label>
+                    <input type="number" id="quota" th:field="*{quota}" class="form-control" required min="1"/>
+                </div>
+                <div class="form-group">
+                    <label for="price">Total Price (IDR)</label>
+                    <input type="number" id="price" th:field="*{price}" class="form-control" required min="0"/>
+                </div>
+                <div class="form-group">
+                    <label for="userId">User ID (Creator)</label>
+                    <input type="text" id="userId" th:field="*{userId}" class="form-control" th:attr="readonly=${isEdit}" required/>
+                    <small th:if="${isEdit}" style="color: var(--text-muted);">Creator ID cannot be changed.</small>
+                </div>
+                <div class="form-group">
+                    <label for="startDate">Start Date/Time</label>
+                    <input type="datetime-local" id="startDate" th:field="*{startDate}" class="form-control" required/>
+                </div>
+                <div class="form-group">
+                    <label for="endDate">End Date/Time</label>
+                    <input type="datetime-local" id="endDate" th:field="*{endDate}" class="form-control" required/>
+                </div>
+                <div th:if="${isEdit}" class="form-group full-width">
+                    <label for="status">Status</label>
+                    <select id="status" th:field="*{status}" class="form-control">
+                        <option value="Pending">Pending</option>
+                        <option value="Processed">Processed</option>
+                    </select>
+                </div>
+                
+            </div>
+            
+            <div style="margin-top: 40px; text-align: right;">
+                <a th:href="@{/package}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary" th:text="${isEdit} ? 'Update Package' : 'Create Package'"></button>
+            </div>
+        </form>
+    </div>
+    
+    <style>
+        .form-card { padding: 30px; border: 1px solid var(--peach-light); border-radius: 8px; box-shadow: var(--shadow-subtle); }
+        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; }
+        .form-group { margin-bottom: 0; }
+        .full-width { grid-column: 1 / -1; }
+        @media (max-width: 768px) {
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</div>
+</html>
