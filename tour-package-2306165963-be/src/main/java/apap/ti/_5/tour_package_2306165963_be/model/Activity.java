@@ -6,29 +6,49 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 
+import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.time.temporal.ChronoUnit;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Entity
+@Table(name = "activities")
 public class Activity {
     
+    @Id  
     private String id;
+    
+    @Column(nullable = false, length = 100)
     private String activityName;
+    
+    @Column(nullable = false, length = 200)
     private String activityItem; 
+    
+    @Column(nullable = false)
     private int capacity; 
+    
+    @Column(nullable = false)
     private Long price;
+    
+    @Column(nullable = false)
     private String activityType; 
 
+    @Column(nullable = false)
     @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime startDate;
     
+    @Column(nullable = false)
     @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime endDate;
     
+    @Column(nullable = false, length = 100)
     private String startLocation;
+    
+    @Column(nullable = false, length = 100)
     private String endLocation;
         
     public String getFormattedPrice() {
@@ -48,8 +68,12 @@ public class Activity {
 
     public String getDuration() {
         if (startDate == null || endDate == null) return "N/A";
-        return String.format("%s - %s", 
-            startDate.toLocalDate().toString(), 
-            endDate.toLocalDate().toString());
+        long days = ChronoUnit.DAYS.between(startDate, endDate);
+        long hours = ChronoUnit.HOURS.between(startDate, endDate) % 24;
+        if (days > 0) {
+            return String.format("%d day%s %d hour%s", days, days > 1 ? "s" : "", hours, hours > 1 ? "s" : "");
+        } else {
+            return String.format("%d hour%s", hours, hours > 1 ? "s" : "");
+        }
     }
 }

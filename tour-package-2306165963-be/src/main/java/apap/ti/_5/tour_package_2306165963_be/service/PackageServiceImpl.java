@@ -2,220 +2,179 @@ package apap.ti._5.tour_package_2306165963_be.service;
 
 import apap.ti._5.tour_package_2306165963_be.model.Package;
 import apap.ti._5.tour_package_2306165963_be.model.Plan;
-import apap.ti._5.tour_package_2306165963_be.service.PackageService;
+import apap.ti._5.tour_package_2306165963_be.repository.PackageRepository;
+import apap.ti._5.tour_package_2306165963_be.repository.PlanRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@Transactional
 public class PackageServiceImpl implements PackageService {
 
-    private final List<Package> packageDB = new ArrayList<>();
-
-    public PackageServiceImpl() {
-        initializeDummyData();
-    }
-
-    private void initializeDummyData() {
-        Package package1 = Package.builder()
-                .id(UUID.randomUUID().toString())
-                .userId("user001")
-                .packageName("Jakarta - Bali Adventure Package")
-                .quota(20)
-                .price(18500000L)
-                .status("Processed")
-                .startDate(LocalDateTime.of(2025, 11, 1, 9, 0))
-                .endDate(LocalDateTime.of(2025, 11, 7, 18, 0))
-                .plans(new ArrayList<>())
-                .build();
-
-        Plan plan1 = Plan.builder()
-                .id(UUID.randomUUID().toString())
-                .packageId(package1.getId())
-                .price(7200000L)
-                .activityType("Flight")
-                .status("Processed")
-                .startDate(LocalDateTime.of(2025, 11, 1, 10, 0))
-                .endDate(LocalDateTime.of(2025, 11, 1, 13, 30))
-                .startLocation("Jakarta (CGK)")
-                .endLocation("Bali (DPS)")
-                .orderedQuantities(new ArrayList<>())
-                .build();
-
-        Plan plan2 = Plan.builder()
-                .id(UUID.randomUUID().toString())
-                .packageId(package1.getId())
-                .price(9000000L)
-                .activityType("Accommodation")
-                .status("Processed")
-                .startDate(LocalDateTime.of(2025, 11, 1, 15, 0))
-                .endDate(LocalDateTime.of(2025, 11, 6, 12, 0))
-                .startLocation("Kuta, Bali")
-                .endLocation("Kuta, Bali")
-                .orderedQuantities(new ArrayList<>())
-                .build();
-
-        package1.getPlans().add(plan1);
-        package1.getPlans().add(plan2);
-        packageDB.add(package1);
-
-        Package package2 = Package.builder()
-                .id(UUID.randomUUID().toString())
-                .userId("user002")
-                .packageName("Lombok Island Getaway")
-                .quota(15)
-                .price(12200000L)
-                .status("Pending")
-                .startDate(LocalDateTime.of(2025, 12, 10, 8, 0))
-                .endDate(LocalDateTime.of(2025, 12, 15, 20, 0))
-                .plans(new ArrayList<>())
-                .build();
-
-        Plan plan3 = Plan.builder()
-                .id(UUID.randomUUID().toString())
-                .packageId(package2.getId())
-                .price(5000000L)
-                .activityType("Flight")
-                .status("Unfinished")
-                .startDate(LocalDateTime.of(2025, 12, 10, 9, 0))
-                .endDate(LocalDateTime.of(2025, 12, 10, 11, 30))
-                .startLocation("Jakarta (CGK)")
-                .endLocation("Lombok (LOP)")
-                .orderedQuantities(new ArrayList<>())
-                .build();
-
-        package2.getPlans().add(plan3);
-        packageDB.add(package2);
-
-        Package package3 = Package.builder()
-                .id(UUID.randomUUID().toString())
-                .userId("user001")
-                .packageName("Surabaya - Malang City Break")
-                .quota(10)
-                .price(8500000L)
-                .status("Pending")
-                .startDate(LocalDateTime.of(2025, 10, 15, 7, 0))
-                .endDate(LocalDateTime.of(2025, 10, 18, 22, 0))
-                .plans(new ArrayList<>())
-                .build();
-        packageDB.add(package3);
-
-        Package package4 = Package.builder()
-                .id(UUID.randomUUID().toString())
-                .userId("user004")
-                .packageName("Yogyakarta Cultural Tour")
-                .quota(30)
-                .price(6500000L)
-                .status("Processed")
-                .startDate(LocalDateTime.of(2025, 11, 20, 6, 0))
-                .endDate(LocalDateTime.of(2025, 11, 23, 20, 0))
-                .plans(new ArrayList<>())
-                .build();
-
-        Plan plan4 = Plan.builder()
-                .id(UUID.randomUUID().toString())
-                .packageId(package4.getId())
-                .price(3500000L)
-                .activityType("Vehicle")
-                .status("Processed")
-                .startDate(LocalDateTime.of(2025, 11, 20, 8, 0))
-                .endDate(LocalDateTime.of(2025, 11, 23, 18, 0))
-                .startLocation("Yogyakarta Station")
-                .endLocation("Yogyakarta Station")
-                .orderedQuantities(new ArrayList<>())
-                .build();
-
-        package4.getPlans().add(plan4);
-        packageDB.add(package4);
-    }
+    @Autowired
+    private PackageRepository packageRepository;
+    
+    @Autowired
+    private PlanRepository planRepository;
 
     @Override
     public List<Package> getAllPackages() {
-        return new ArrayList<>(packageDB);
+        return packageRepository.findAll();
     }
 
     @Override
     public Optional<Package> getPackageById(String id) {
-        return packageDB.stream()
-                .filter(p -> p.getId().equals(id))
-                .findFirst();
+        return packageRepository.findById(id);
     }
 
     @Override
-    public Package createPackage(Package pkg) {
-        if (pkg.getStartDate() != null && pkg.getEndDate() != null && 
-            pkg.getEndDate().isBefore(pkg.getStartDate())) {
-            throw new IllegalArgumentException("End date must be after start date.");
-        }
-
-        pkg.setId(UUID.randomUUID().toString());
-        pkg.setStatus("Pending");
-        pkg.setPlans(new ArrayList<>());
-        packageDB.add(pkg);
-        return pkg;
+    public Optional<Package> getPackageWithPlans(String id) {
+        return packageRepository.findByIdWithPlans(id);
     }
 
     @Override
-    public Package updatePackage(Package updatedPkg) {
-        Optional<Package> pkgOpt = getPackageById(updatedPkg.getId());
+    public Package createPackage(Package packageEntity) {
+        // Validate
+        validatePackage(packageEntity);
+        
+        // Generate ID
+        packageEntity.setId(UUID.randomUUID().toString());
+        
+        // Set initial status
+        packageEntity.setStatus("Pending");
+        
+        return packageRepository.save(packageEntity);
+    }
 
-        if (pkgOpt.isEmpty()) {
-            throw new IllegalStateException("Package not found.");
+    @Override
+    public Package updatePackage(Package packageEntity) {
+        // Check if exists
+        Optional<Package> existingPackage = packageRepository.findById(packageEntity.getId());
+        if (existingPackage.isEmpty()) {
+            throw new IllegalArgumentException("Package not found with ID: " + packageEntity.getId());
         }
-
-        Package existingPackage = pkgOpt.get();
-
-        if (!"Pending".equals(existingPackage.getStatus())) {
-            throw new IllegalStateException("Only packages with 'Pending' status can be edited.");
+        
+        Package existing = existingPackage.get();
+        
+        // Check if can be edited
+        if ("Processed".equals(existing.getStatus())) {
+            throw new IllegalStateException("Cannot update processed package");
         }
-
-        if (updatedPkg.getStartDate() != null && updatedPkg.getEndDate() != null && 
-            updatedPkg.getEndDate().isBefore(updatedPkg.getStartDate())) {
-            throw new IllegalArgumentException("End date must be after start date.");
-        }
-
-        updatedPkg.setPlans(existingPackage.getPlans());
-        updatedPkg.setStatus("Pending");
-
-        int index = packageDB.indexOf(existingPackage);
-        if (index != -1) {
-            packageDB.set(index, updatedPkg);
-        }
-
-        return updatedPkg;
+        
+        // Validate
+        validatePackage(packageEntity);
+        
+        // Update fields
+        existing.setUserId(packageEntity.getUserId());
+        existing.setPackageName(packageEntity.getPackageName());
+        existing.setQuota(packageEntity.getQuota());
+        existing.setPrice(packageEntity.getPrice());
+        existing.setStartDate(packageEntity.getStartDate());
+        existing.setEndDate(packageEntity.getEndDate());
+        
+        return packageRepository.save(existing);
     }
 
     @Override
     public boolean deletePackage(String id) {
-        return packageDB.removeIf(p -> p.getId().equals(id));
+        Optional<Package> packageOptional = packageRepository.findById(id);
+        
+        if (packageOptional.isEmpty()) {
+            return false;
+        }
+        
+        Package packageEntity = packageOptional.get();
+        
+        // Check if can be deleted
+        if ("Processed".equals(packageEntity.getStatus())) {
+            throw new IllegalStateException("Cannot delete processed package");
+        }
+        
+        // Delete all associated plans first
+        planRepository.deleteByPackageId(id);
+        
+        // Delete package
+        packageRepository.deleteById(id);
+        return true;
     }
 
     @Override
-    public Package processPackage(String id) {
-        Optional<Package> packageOptional = getPackageById(id);
-
+    public void processPackage(String id) {
+        Optional<Package> packageOptional = packageRepository.findByIdWithPlans(id);
+        
         if (packageOptional.isEmpty()) {
-            throw new IllegalStateException("Package not found.");
+            throw new IllegalArgumentException("Package not found with ID: " + id);
         }
-
-        Package pkg = packageOptional.get();
-
-        if (pkg.getPlans().isEmpty()) {
-            throw new IllegalStateException("Cannot process package: No plans added yet.");
+        
+        Package packageEntity = packageOptional.get();
+        
+        // Validate package can be processed
+        if ("Processed".equals(packageEntity.getStatus())) {
+            throw new IllegalStateException("Package is already processed");
         }
-
-        boolean allPlansProcessed = pkg.getPlans().stream()
-                .allMatch(p -> "Processed".equals(p.getStatus()));
-
-        if (!allPlansProcessed) {
-            throw new IllegalStateException("Cannot process package: Not all plans are processed.");
+        
+        // Check if package has at least one plan
+        if (packageEntity.getPlans() == null || packageEntity.getPlans().isEmpty()) {
+            throw new IllegalStateException("Cannot process package without plans");
         }
+        
+        // Check if all plans are complete (have ordered quantities)
+        for (Plan plan : packageEntity.getPlans()) {
+            if (plan.getOrderedQuantities() == null || plan.getOrderedQuantities().isEmpty()) {
+                throw new IllegalStateException("Cannot process package with incomplete plans. Plan ID: " + plan.getId());
+            }
+            
+            // Set plan status to Processed
+            plan.setStatus("Processed");
+            planRepository.save(plan);
+        }
+        
+        // Set package status to Processed
+        packageEntity.setStatus("Processed");
+        packageRepository.save(packageEntity);
+    }
 
-        pkg.setStatus("Processed");
-        return pkg;
+    @Override
+    public List<Package> getPackagesByUserId(String userId) {
+        return packageRepository.findByUserId(userId);
+    }
+
+    @Override
+    public List<Package> getPackagesByStatus(String status) {
+        return packageRepository.findByStatus(status);
+    }
+
+    // ========== PRIVATE HELPER METHODS ==========
+    
+    private void validatePackage(Package packageEntity) {
+        // Validate dates
+        if (packageEntity.getEndDate().isBefore(packageEntity.getStartDate())) {
+            throw new IllegalArgumentException("End date must be after start date");
+        }
+        
+        // Validate quota
+        if (packageEntity.getQuota() <= 0) {
+            throw new IllegalArgumentException("Quota must be greater than 0");
+        }
+        
+        // Validate price
+        if (packageEntity.getPrice() < 0) {
+            throw new IllegalArgumentException("Price cannot be negative");
+        }
+        
+        // Validate user ID
+        if (packageEntity.getUserId() == null || packageEntity.getUserId().trim().isEmpty()) {
+            throw new IllegalArgumentException("User ID is required");
+        }
+        
+        // Validate package name
+        if (packageEntity.getPackageName() == null || packageEntity.getPackageName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Package name is required");
+        }
     }
 }

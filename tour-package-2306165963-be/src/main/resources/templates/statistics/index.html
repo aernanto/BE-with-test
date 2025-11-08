@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::title}, ~{::div.content})}">
+<head>
+    <title>Statistics - Potential Revenue</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<div class="content">
+    <div class="page-header">
+        <div>
+            <h1>📊 Potential Revenue Statistics</h1>
+            <p class="subtitle">View revenue breakdown by activity type</p>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <h2 class="filter-title">🔍 Filter Data</h2>
+        <form method="GET" action="/statistics" class="filter-form">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="year">Year:</label>
+                    <select id="year" name="year" class="form-control">
+                        <option th:each="y : ${years}" 
+                                th:value="${y}" 
+                                th:text="${y}"
+                                th:selected="${y == selectedYear}">2025</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="month">Month:</label>
+                    <select id="month" name="month" class="form-control">
+                        <option value="">All</option>
+                        <option th:each="m, stat : ${months}" 
+                                th:if="${stat.index > 0}"
+                                th:value="${stat.index}" 
+                                th:text="${m}"
+                                th:selected="${m == selectedMonth}">January</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <button type="submit" class="btn btn-primary">Show Statistic</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="chart-section">
+        <h2 class="chart-title">Revenue by Activity Type</h2>
+        <div class="chart-container">
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-section">
+        <h2 class="section-title">📈 Summary</h2>
+        <div class="summary-grid">
+            <div class="summary-card flight-card">
+                <div class="card-icon">✈️</div>
+                <div class="card-content">
+                    <div class="card-label">Flight Revenue</div>
+                    <div class="card-value" th:text="${'Rp ' + #numbers.formatInteger(revenueData['Flight'], 0, 'COMMA')}">Rp 0</div>
+                </div>
+            </div>
+
+            <div class="summary-card accommodation-card">
+                <div class="card-icon">🏨</div>
+                <div class="card-content">
+                    <div class="card-label">Accommodation Revenue</div>
+                    <div class="card-value" th:text="${'Rp ' + #numbers.formatInteger(revenueData['Accommodation'], 0, 'COMMA')}">Rp 0</div>
+                </div>
+            </div>
+
+            <div class="summary-card vehicle-card">
+                <div class="card-icon">🚗</div>
+                <div class="card-content">
+                    <div class="card-label">Vehicle Rental Revenue</div>
+                    <div class="card-value" th:text="${'Rp ' + #numbers.formatInteger(revenueData['Vehicle Rental'], 0, 'COMMA')}">Rp 0</div>
+                </div>
+            </div>
+
+            <div class="summary-card total-card">
+                <div class="card-icon">💰</div>
+                <div class="card-content">
+                    <div class="card-label">Total Revenue</div>
+                    <div class="card-value" id="totalRevenue">Rp 0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        // Get data from Thymeleaf
+        const revenueData = /*[[${revenueData}]]*/ {};
+        
+        // Prepare data for Chart.js
+        const labels = Object.keys(revenueData);
+        const data = Object.values(revenueData);
+        
+        // Calculate total
+        const total = data.reduce((sum, val) => sum + val, 0);
+        document.getElementById('totalRevenue').textContent = formatRupiah(total);
+
+        // Create chart
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        const revenueChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Revenue (IDR)',
+                    data: data,
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.8)',   // Blue for Flight
+                        'rgba(255, 159, 64, 0.8)',   // Orange for Accommodation
+                        'rgba(75, 192, 192, 0.8)'    // Teal for Vehicle
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(75, 192, 192, 1)'
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: {
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                return 'Revenue: ' + formatRupiah(context.parsed.y);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'Rp ' + (value / 1000000).toFixed(0) + 'M';
+                            },
+                            font: {
+                                size: 12
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                size: 13,
+                                weight: 'bold'
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+
+        function formatRupiah(amount) {
+            return 'Rp ' + amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+        /*]]>*/
+    </script>
+
+    <style>
+        .page-header {
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1em;
+            margin-top: 10px;
+        }
+
+        .filter-section {
+            background: white;
+            padding: 30px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            margin-bottom: 40px;
+        }
+
+        .filter-title {
+            font-size: 1.4em;
+            color: var(--coral-primary);
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .filter-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .filter-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 0.95em;
+        }
+
+        .chart-section {
+            background: white;
+            padding: 40px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            margin-bottom: 40px;
+        }
+
+        .chart-title {
+            font-size: 1.5em;
+            color: var(--text-dark);
+            margin-bottom: 30px;
+            font-weight: 700;
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--coral-primary), var(--coral-dark));
+            color: white;
+            border-radius: var(--radius-md);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            padding: 20px;
+        }
+
+        .summary-section {
+            background: white;
+            padding: 40px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: var(--text-dark);
+            margin-bottom: 30px;
+            font-weight: 700;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+        }
+
+        .summary-card {
+            padding: 30px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .flight-card {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border-left: 5px solid #2196F3;
+        }
+
+        .accommodation-card {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+            border-left: 5px solid #FF9800;
+        }
+
+        .vehicle-card {
+            background: linear-gradient(135deg, #e0f2f1, #b2dfdb);
+            border-left: 5px solid #009688;
+        }
+
+        .total-card {
+            background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+            border-left: 5px solid #9C27B0;
+        }
+
+        .card-icon {
+            font-size: 3em;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+        }
+
+        .card-content {
+            flex: 1;
+        }
+
+        .card-label {
+            font-size: 0.9em;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .card-value {
+            font-size: 1.8em;
+            font-weight: 800;
+            color: var(--text-dark);
+        }
+
+        @media (max-width: 768px) {
+            .filter-row {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container {
+                height: 300px;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card-value {
+                font-size: 1.4em;
+            }
+
+            .chart-section, .filter-section, .summary-section {
+                padding: 20px;
+            }
+        }
+    </style>
+</div>
+</html>

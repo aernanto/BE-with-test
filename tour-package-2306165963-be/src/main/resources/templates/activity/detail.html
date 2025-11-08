@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::title}, ~{::div.content})}">
+<head>
+    <title th:text="${activity.activityName}">Activity Detail</title>
+</head>
+<div class="content">
+    <div class="page-header">
+        <div>
+            <h1 th:text="${activity.activityName}">Activity Name</h1>
+            <div class="breadcrumb">
+                <a th:href="@{/activities}">📋 Activities</a> / <span th:text="${activity.activityName}"></span>
+            </div>
+        </div>
+        <!-- FIXED: Proper string concatenation using |...| syntax -->
+        <span class="activity-type-badge" th:text="|${activity.activityTypeIcon} ${activity.activityType}|">
+            ✈️ Flight
+        </span>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+    <!-- Activity Info Section -->
+    <div class="detail-container">
+        <div class="info-card highlight-card">
+            <div class="card-icon">💰</div>
+            <div>
+                <div class="card-label">Price Per Unit</div>
+                <div class="card-value" th:text="${activity.formattedPrice}"></div>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="card-icon-sm">🆔</div>
+                <div>
+                    <div class="card-label">Activity ID</div>
+                    <div class="card-value-sm" th:text="${activity.id}"></div>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="card-icon-sm">📦</div>
+                <div>
+                    <div class="card-label">Activity Item</div>
+                    <div class="card-value-sm" th:text="${activity.activityItem}"></div>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="card-icon-sm">👥</div>
+                <div>
+                    <div class="card-label">Capacity</div>
+                    <!-- FIXED: Proper string concatenation -->
+                    <div class="card-value-sm" th:text="|${activity.capacity} People|"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Location & Schedule Section -->
+        <div class="timeline-section">
+            <h2 class="section-title">📍 Location & Schedule</h2>
+            <div class="location-info">
+                <div class="location-item">
+                    <div class="location-icon">🛫</div>
+                    <div>
+                        <div class="location-label">Start Location</div>
+                        <div class="location-value" th:text="${activity.startLocation}">Jakarta</div>
+                    </div>
+                </div>
+
+                <div class="location-connector">→</div>
+
+                <div class="location-item">
+                    <div class="location-icon">🛬</div>
+                    <div>
+                        <div class="location-label">End Location</div>
+                        <div class="location-value" th:text="${activity.endLocation}">Bali</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="schedule-info">
+                <div class="schedule-item">
+                    <div class="schedule-label">Start Date & Time</div>
+                    <!-- FIXED: Proper string concatenation -->
+                    <div class="schedule-value" th:text="|${#temporals.format(activity.startDate, 'EEEE, dd MMMM yyyy HH:mm')} WIB|"></div>
+                </div>
+                <div class="schedule-item">
+                    <div class="schedule-label">End Date & Time</div>
+                    <!-- FIXED: Proper string concatenation -->
+                    <div class="schedule-value" th:text="|${#temporals.format(activity.endDate, 'EEEE, dd MMMM yyyy HH:mm')} WIB|"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-bar">
+        <a th:href="@{/activities}" class="btn btn-secondary">← Back to Activities</a>
+        <div style="display: flex; gap: 10px;">
+            <a th:href="@{/activities/update/{id}(id=${activity.id})}" class="btn btn-primary">✏️ Edit Activity</a>
+            <!-- FIXED: Move confirm to form onsubmit -->
+            <form th:action="@{/activities/delete/{id}(id=${activity.id})}" 
+                  method="POST" 
+                  style="display: inline;"
+                  onsubmit="return confirm('⚠️ Delete this activity?');">
+                <button type="submit" class="btn btn-danger">
+                    🗑️ Delete Activity
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        .breadcrumb {
+            font-size: 0.9em;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        .breadcrumb a {
+            color: var(--coral-primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 40px;
+        }
+
+        .activity-type-badge {
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 0.9em;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--coral-primary), var(--coral-dark));
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .detail-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .info-card {
+            padding: 25px;
+            background: white;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            border-left: 4px solid var(--coral-primary);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .info-card:hover {
+            transform: translateX(5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .highlight-card {
+            background: linear-gradient(135deg, #fff8f5, #ffe5d9);
+            border-left: 6px solid var(--success-color);
+            padding: 35px;
+        }
+
+        .card-icon {
+            font-size: 3em;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+        }
+
+        .card-icon-sm {
+            font-size: 2em;
+        }
+
+        .card-label {
+            font-size: 0.85em;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .card-value {
+            font-size: 2.5em;
+            font-weight: 800;
+            color: var(--success-color);
+        }
+
+        .card-value-sm {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--text-dark);
+            word-break: break-all;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .timeline-section {
+            background: linear-gradient(135deg, #fff8f5, #ffe5d9);
+            padding: 40px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            color: var(--text-dark);
+            margin-bottom: 35px;
+            font-weight: 800;
+        }
+
+        .location-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: white;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .location-item {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .location-icon {
+            font-size: 3em;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+        }
+
+        .location-label {
+            font-size: 0.85em;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .location-value {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .location-connector {
+            font-size: 2em;
+            color: var(--coral-primary);
+            font-weight: 700;
+        }
+
+        .schedule-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .schedule-item {
+            padding: 20px;
+            background: white;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .schedule-label {
+            font-size: 0.85em;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .schedule-value {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid var(--peach-light);
+        }
+
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .location-info {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .location-connector {
+                transform: rotate(90deg);
+            }
+
+            .action-bar {
+                flex-direction: column;
+            }
+
+            .action-bar > div {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</div>
+</html>

@@ -1,239 +1,160 @@
 package apap.ti._5.tour_package_2306165963_be.controller;
 
+import apap.ti._5.tour_package_2306165963_be.dto.DtoMapper;
+import apap.ti._5.tour_package_2306165963_be.dto.packagedto.UpdatePackageDto;
 import apap.ti._5.tour_package_2306165963_be.model.Package;
+import apap.ti._5.tour_package_2306165963_be.restcontroller.PackageRestController;
 import apap.ti._5.tour_package_2306165963_be.service.PackageService;
-import org.junit.jupiter.api.BeforeEach;
+import apap.ti._5.tour_package_2306165963_be.util.TestDataFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(PackageController.class)
-@ActiveProfiles("test")
+@WebMvcTest(PackageRestController.class)
+@ContextConfiguration(classes = {PackageControllerTest.TestConfig.class})
 class PackageControllerTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    MockMvc mockMvc;
 
     @MockBean
-    private PackageService packageService;
+    PackageService packageService;
 
-    private String existingId;
-    private String processedId;
-    private String fakeId = UUID.randomUUID().toString();
-    private Package pendingPackage;
-    private Package processedPackage;
+    @Autowired
+    ObjectMapper objectMapper;
 
-    @BeforeEach
-    void setup() {
-        existingId = UUID.randomUUID().toString();
-        processedId = UUID.randomUUID().toString();
-        
-        pendingPackage = Package.builder()
-                .id(existingId)
-                .packageName("Pending Package")
-                .status("Pending")
-                .quota(5)
-                .price(1000000L)
-                .startDate(LocalDateTime.now().plusDays(10))
-                .endDate(LocalDateTime.now().plusDays(15))
-                .build();
-
-        processedPackage = Package.builder()
-                .id(processedId)
-                .packageName("Processed Package")
-                .status("Processed")
-                .quota(10)
-                .price(2000000L)
-                .startDate(LocalDateTime.now().plusDays(10))
-                .endDate(LocalDateTime.now().plusDays(15))
-                .build();
-
-        Mockito.when(packageService.getAllPackages())
-               .thenReturn(List.of(pendingPackage, processedPackage));
-        
-        Mockito.when(packageService.getPackageById(existingId))
-               .thenReturn(Optional.of(pendingPackage));
-        
-        Mockito.when(packageService.getPackageById(processedId))
-               .thenReturn(Optional.of(processedPackage));
-        
-        Mockito.when(packageService.getPackageById(fakeId))
-               .thenReturn(Optional.empty());
-
-        Mockito.when(packageService.deletePackage(existingId)).thenReturn(true);
-        Mockito.when(packageService.deletePackage(fakeId)).thenReturn(false);
-        
-        Mockito.when(packageService.createPackage(any(Package.class)))
-               .thenReturn(pendingPackage);
-        Mockito.when(packageService.updatePackage(any(Package.class)))
-               .thenReturn(pendingPackage);
-        Mockito.when(packageService.processPackage(any(String.class)))
-               .thenReturn(processedPackage);
+    @Configuration
+    static class TestConfig {
+        @Bean
+        DtoMapper dtoMapper() {
+            return new DtoMapper(); // HARUS PUNYA CONSTRUCTOR KOSONG
+        }
     }
 
     @Test
-    void testGetAllPackagesSuccess() throws Exception {
-        mockMvc.perform(get("/package"))
+    void getAllPackages_ok() throws Exception {
+        when(packageService.getAllPackages()).thenReturn(List.of(TestDataFactory.pkg("pkg-1")));
+
+        mockMvc.perform(get("/api/packages"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("package/view-all"))
-                .andExpect(model().attributeExists("listPackage"));
+                .andExpect(jsonPath("$[0].id", is("pkg-1")));
     }
 
     @Test
-    void testGetPackageByIdFound() throws Exception {
-        mockMvc.perform(get("/package/" + existingId))
+    void getPackageById_found() throws Exception {
+        when(packageService.getPackageById("pkg-1")).thenReturn(Optional.of(TestDataFactory.pkg("pkg-1")));
+
+        mockMvc.perform(get("/api/packages/pkg-1"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("package/detail"))
-                .andExpect(model().attributeExists("currentPackage"));
+                .andExpect(jsonPath("$.id", is("pkg-1")));
     }
 
     @Test
-    void testGetPackageByIdNotFound() throws Exception {
-        mockMvc.perform(get("/package/" + fakeId))
+    void getPackageById_notFound() throws Exception {
+        when(packageService.getPackageById("x")).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/packages/x"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void createPackage_created() throws Exception {
+        Package req = TestDataFactory.pkg(null);
+        Package resp = TestDataFactory.pkg("pkg-1");
+        when(packageService.createPackage(any())).thenReturn(resp);
+
+        mockMvc.perform(post("/api/packages")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id", is("pkg-1")));
+    }
+
+    @Test
+    void updatePackage_ok() throws Exception {
+        UpdatePackageDto req = new UpdatePackageDto();
+        req.setPackageName("Updated Package");
+
+        Package saved = TestDataFactory.pkg("pkg-1");
+        saved.setPackageName("Updated Package");
+
+        when(packageService.updatePackage(any())).thenReturn(saved);
+
+        mockMvc.perform(put("/api/packages/pkg-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
-                .andExpect(view().name("error/404"))
-                .andExpect(model().attributeExists("message"));
+                .andExpect(jsonPath("$.packageName", is("Updated Package")));
     }
-    
+
     @Test
-    void testFormCreatePackage() throws Exception {
-        mockMvc.perform(get("/package/create"))
+    void deletePackage_noContent() throws Exception {
+        when(packageService.deletePackage("pkg-1")).thenReturn(true);
+
+        mockMvc.perform(delete("/api/packages/pkg-1"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void deletePackage_conflict_whenProcessed() throws Exception {
+        Mockito.doThrow(new IllegalStateException("Cannot delete processed package"))
+               .when(packageService).deletePackage("pkg-1");
+
+        mockMvc.perform(delete("/api/packages/pkg-1"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void processPackage_ok() throws Exception {
+        Mockito.doNothing().when(packageService).processPackage("pkg-1");
+
+        mockMvc.perform(post("/api/packages/pkg-1/process"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void processPackage_badRequest_whenError() throws Exception {
+        Mockito.doThrow(new RuntimeException("Error"))
+               .when(packageService).processPackage("pkg-1");
+
+        mockMvc.perform(post("/api/packages/pkg-1/process"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getPackagesByUser_ok() throws Exception {
+        when(packageService.getPackagesByUserId("user-1"))
+                .thenReturn(List.of(TestDataFactory.pkg("pkg-1")));
+
+        mockMvc.perform(get("/api/packages/user/user-1"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("package/form"))
-                .andExpect(model().attribute("isEdit", false))
-                .andExpect(model().attributeExists("packageData"));
+                .andExpect(jsonPath("$[0].id", is("pkg-1")));
     }
 
     @Test
-    void testCreatePackageSuccess() throws Exception {
-        mockMvc.perform(post("/package/create")
-                .param("packageName", "New Test Package")
-                .param("quota", "3")
-                .param("price", "5000000")
-                .param("startDate", "2026-01-01T10:00")
-                .param("endDate", "2026-01-05T18:00"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/package"))
-                .andExpect(flash().attributeExists("successMessage"));
-    }
+    void getPackagesByStatus_ok() throws Exception {
+        when(packageService.getPackagesByStatus("Pending"))
+                .thenReturn(List.of(TestDataFactory.pkg("pkg-1")));
 
-    @Test
-    void testCreatePackageFailure_InvalidData() throws Exception {
-        Mockito.when(packageService.createPackage(any(Package.class)))
-               .thenThrow(new IllegalArgumentException("Invalid package data."));
-        
-        mockMvc.perform(post("/package/create")
-                .param("packageName", "Invalid Package")
-                .param("quota", "0") 
-                .param("price", "10000"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/package/create"))
-                .andExpect(flash().attributeExists("errorMessage"));
-    }
-
-    @Test
-    void testFormEditPackageFound_Pending() throws Exception {
-        mockMvc.perform(get("/package/update/" + existingId))
+        mockMvc.perform(get("/api/packages/status/Pending"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("package/form"))
-                .andExpect(model().attribute("isEdit", true))
-                .andExpect(model().attributeExists("packageData"));
-    }
-
-    @Test
-    void testFormEditPackageFound_Processed_CannotEdit() throws Exception {
-        mockMvc.perform(get("/package/update/" + processedId))
-                .andExpect(status().isOk())
-                .andExpect(view().name("error/404")) // Harusnya mengarah ke 404/Error view
-                .andExpect(model().attribute("title", "Cannot Edit Package"));
-    }
-
-    @Test
-    void testUpdatePackageSuccess() throws Exception {
-        mockMvc.perform(post("/package/update/" + existingId) 
-                .param("packageName", "Updated Package Name")
-                .param("quota", "10")
-                .param("price", "10000000")
-                .param("status", "Pending") // Harus 'Pending' agar bisa diupdate
-                .param("startDate", "2025-11-01T09:00") 
-                .param("endDate", "2025-11-07T18:00"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/package/" + existingId)) // Perbaikan: Redirect ke detail, bukan view-all
-                .andExpect(flash().attributeExists("successMessage"));
-    }
-    
-    @Test
-    void testUpdatePackageFailure_ServiceError() throws Exception {
-        Mockito.when(packageService.updatePackage(any(Package.class)))
-               .thenThrow(new IllegalStateException("Update validation failed."));
-        
-        mockMvc.perform(post("/package/update/" + existingId)
-                .param("packageName", "Updated Package Name")
-                .param("quota", "10"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/package/update/" + existingId))
-                .andExpect(flash().attributeExists("errorMessage"));
-    }
-    
-    @Test
-    void testDeletePackageSuccess() throws Exception {
-        mockMvc.perform(post("/package/delete/" + existingId))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/package"))
-                .andExpect(flash().attributeExists("successMessage"));
-    }
-
-    @Test
-    void testDeletePackageNotFound() throws Exception {
-        mockMvc.perform(post("/package/delete/" + fakeId))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/package"))
-                .andExpect(flash().attributeExists("errorMessage"));
-    }
-
-    @Test
-    void testProcessPackageSuccess() throws Exception {
-        mockMvc.perform(post("/package/process/" + existingId))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/package/" + existingId))
-                .andExpect(flash().attributeExists("successMessage"));
-    }
-
-    @Test
-    void testProcessPackageNotFound() throws Exception {
-        Mockito.when(packageService.getPackageById(fakeId)).thenReturn(Optional.empty()); 
-
-        Mockito.when(packageService.processPackage(fakeId))
-               .thenThrow(new IllegalStateException("Package not found for processing."));
-
-        mockMvc.perform(post("/package/process/" + fakeId))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/package/" + fakeId))
-                .andExpect(flash().attributeExists("errorMessage"));
-    }
-    
-    @Test
-    void testProcessPackageFailure_ServiceError() throws Exception {
-        Mockito.when(packageService.processPackage(existingId))
-               .thenThrow(new IllegalStateException("Cannot process package: all plans must be complete."));
-
-        mockMvc.perform(post("/package/process/" + existingId))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/package/" + existingId))
-                .andExpect(flash().attributeExists("errorMessage"));
+                .andExpect(jsonPath("$[0].id", is("pkg-1")));
     }
 }

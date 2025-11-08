@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::title}, ~{::div.content})}">
+<head>
+    <title th:text="${isEdit} ? 'Edit Ordered Quantity' : 'Add Activity to Plan'">Ordered Quantity Form</title>
+</head>
+<div class="content">
+    <div class="form-header">
+        <h1 th:text="${isEdit} ? '✏️ Edit Ordered Quantity' : '➕ Add Activity to Plan'">Form</h1>
+        <p class="form-subtitle">
+            Plan: <strong><span th:text="${currentPlan.activityTypeIcon}"></span> <span th:text="${currentPlan.activityType}"></span></strong>
+        </p>
+        <div class="breadcrumb">
+            <a th:href="@{/package}">📦 Packages</a> /
+            <a th:href="@{/package/{id}(id=${currentPlan.packageId})}" th:text="${currentPlan.packageId}">Package</a> /
+            <span th:text="${isEdit} ? 'Edit Activity' : 'Add Activity'"></span>
+        </div>
+    </div>
+
+    <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+    <div class="form-container">
+        <form th:action="${isEdit} ?
+                         @{/package/{packageId}/plan/{planId}/ordered-quantity/update/{oqId}(packageId=${currentPlan.packageId}, planId=${currentPlan.id}, oqId=${oqData.id})} :
+                         @{/package/{packageId}/plan/{planId}/ordered-quantity/create(packageId=${currentPlan.packageId}, planId=${currentPlan.id})}"
+              th:object="${oqData}"
+              method="POST"
+              class="modern-form"
+              id="oqForm">
+           
+            <div class="form-section">
+                <h3 class="section-heading">🎯 Select Activity</h3>
+               
+                <div class="form-group" th:if="${!isEdit}">
+                    <label for="activityId">Activity <span class="required">*</span></label>
+                    <select id="activityId" 
+                            th:field="*{activityId}" 
+                            class="form-control" 
+                            required
+                            onchange="updateActivityDetails()">
+                        <option value="">-- Select an Activity --</option>
+                        <option th:each="activity : ${activities}" 
+                                th:value="${activity.id}"
+                                th:text="${activity.activityName} + ' - ' + ${activity.activityItem} + ' (' + ${activity.formattedPrice} + ')'"
+                                th:data-name="${activity.activityName}"
+                                th:data-item="${activity.activityItem}"
+                                th:data-price="${activity.price}"
+                                th:data-capacity="${activity.capacity}"
+                                th:data-start="${activity.startDate}"
+                                th:data-end="${activity.endDate}">
+                        </option>
+                    </select>
+                    <small class="form-hint">Available activities matching this plan's type</small>
+                </div>
+
+                <div class="form-group" th:if="${isEdit}">
+                    <label>Activity</label>
+                    <div class="readonly-field">
+                        <span th:text="${oqData.activityName} + ' - ' + ${oqData.activityItem}"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="activityDetails" style="display: none;">
+                <div class="form-section">
+                    <h3 class="section-heading">📋 Activity Details</h3>
+                   
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Activity Name:</span>
+                            <span id="detailName" class="detail-value">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Item:</span>
+                            <span id="detailItem" class="detail-value">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Unit Price:</span>
+                            <span id="detailPrice" class="detail-value">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Available Capacity:</span>
+                            <span id="detailCapacity" class="detail-value">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Start Date:</span>
+                            <span id="detailStart" class="detail-value">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">End Date:</span>
+                            <span id="detailEnd" class="detail-value">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3 class="section-heading">🔢 Quantity</h3>
+                   
+                    <div class="form-group">
+                        <label for="orderedQuota">Ordered Quantity <span class="required">*</span></label>
+                        <input type="number"
+                               id="orderedQuota"
+                               th:field="*{orderedQuota}"
+                               class="form-control"
+                               placeholder="Enter quantity"
+                               required
+                               min="1"
+                               onchange="calculateTotal()"/>
+                        <small class="form-hint">Maximum: <span id="maxCapacity">-</span></small>
+                    </div>
+
+                    <div class="total-display">
+                        <span class="total-label">Total Price:</span>
+                        <span id="totalPrice" class="total-value">Rp 0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${isEdit}" class="form-section">
+                <h3 class="section-heading">📋 Current Activity Details</h3>
+               
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Activity Name:</span>
+                        <span class="detail-value" th:text="${oqData.activityName}">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Item:</span>
+                        <span class="detail-value" th:text="${oqData.activityItem}">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Unit Price:</span>
+                        <span class="detail-value" th:text="${oqData.formattedPrice}">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Available Capacity:</span>
+                        <span class="detail-value" th:text="${oqData.quota}">-</span>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3 class="section-heading">🔢 Update Quantity</h3>
+                   
+                    <div class="form-group">
+                        <label for="orderedQuotaEdit">Ordered Quantity <span class="required">*</span></label>
+                        <input type="number"
+                               id="orderedQuotaEdit"
+                               th:field="*{orderedQuota}"
+                               class="form-control"
+                               placeholder="Enter quantity"
+                               required
+                               min="1"
+                               th:max="${oqData.quota}"
+                               onchange="calculateTotalEdit()"/>
+                        <small class="form-hint">Maximum: <span th:text="${oqData.quota}">-</span></small>
+                    </div>
+
+                    <div class="total-display">
+                        <span class="total-label">Total Price:</span>
+                        <span id="totalPriceEdit" class="total-value" 
+                              th:text="${oqData.formattedTotalPrice}">Rp 0</span>
+                    </div>
+                </div>
+            </div>
+           
+            <div class="form-actions">
+                <a th:href="@{/package/{packageId}/plan/{planId}(packageId=${currentPlan.packageId}, planId=${currentPlan.id})}" 
+                   class="btn btn-secondary">❌ Cancel</a>
+                <button type="submit" 
+                        class="btn btn-primary" 
+                        th:text="${isEdit} ? '💾 Update' : '✨ Add Activity'}"></button>
+            </div>
+        </form>
+    </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        var isEdit = /*[[${isEdit}]]*/ false;
+        var editPrice = /*[[${oqData.price}]]*/ 0;
+
+        function updateActivityDetails() {
+            var select = document.getElementById('activityId');
+            var selectedOption = select.options[select.selectedIndex];
+            
+            if (selectedOption.value === '') {
+                document.getElementById('activityDetails').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('activityDetails').style.display = 'block';
+            
+            var name = selectedOption.getAttribute('data-name');
+            var item = selectedOption.getAttribute('data-item');
+            var price = parseInt(selectedOption.getAttribute('data-price'));
+            var capacity = selectedOption.getAttribute('data-capacity');
+            var startDate = selectedOption.getAttribute('data-start');
+            var endDate = selectedOption.getAttribute('data-end');
+
+            document.getElementById('detailName').textContent = name;
+            document.getElementById('detailItem').textContent = item;
+            document.getElementById('detailPrice').textContent = formatRupiah(price);
+            document.getElementById('detailCapacity').textContent = capacity + ' people';
+            document.getElementById('maxCapacity').textContent = capacity + ' people';
+            
+            if (startDate && endDate) {
+                document.getElementById('detailStart').textContent = formatDate(startDate);
+                document.getElementById('detailEnd').textContent = formatDate(endDate);
+            }
+
+            document.getElementById('orderedQuota').setAttribute('max', capacity);
+            document.getElementById('orderedQuota').value = '';
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            var select = document.getElementById('activityId');
+            var selectedOption = select.options[select.selectedIndex];
+            var quantity = parseInt(document.getElementById('orderedQuota').value) || 0;
+            
+            if (selectedOption.value === '') {
+                document.getElementById('totalPrice').textContent = 'Rp 0';
+                return;
+            }
+
+            var price = parseInt(selectedOption.getAttribute('data-price'));
+            var total = price * quantity;
+            
+            document.getElementById('totalPrice').textContent = formatRupiah(total);
+        }
+
+        function calculateTotalEdit() {
+            var quantity = parseInt(document.getElementById('orderedQuotaEdit').value) || 0;
+            var total = editPrice * quantity;
+            document.getElementById('totalPriceEdit').textContent = formatRupiah(total);
+        }
+
+        function formatRupiah(amount) {
+            return 'Rp ' + amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        function formatDate(dateString) {
+            var date = new Date(dateString);
+            var options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            return date.toLocaleDateString('id-ID', options);
+        }
+
+        // Initialize on page load
+        if (!isEdit) {
+            document.addEventListener('DOMContentLoaded', function() {
+                updateActivityDetails();
+            });
+        }
+        /*]]>*/
+    </script>
+
+    <style>
+        .breadcrumb {
+            font-size: 0.9em;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+       
+        .breadcrumb a {
+            color: var(--coral-primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+       
+        .form-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+       
+        .form-header h1 {
+            font-size: 2.5em;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+        }
+       
+        .form-subtitle {
+            color: var(--text-muted);
+            font-size: 1.1em;
+            margin-top: 10px;
+        }
+       
+        .form-container {
+            background: linear-gradient(135deg, #fff8f5, #ffe5d9);
+            padding: 45px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+       
+        .modern-form {
+            background: white;
+            padding: 40px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+       
+        .form-section {
+            margin-bottom: 35px;
+            padding-bottom: 35px;
+            border-bottom: 2px solid var(--peach-light);
+        }
+       
+        .form-section:last-of-type {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+       
+        .section-heading {
+            font-size: 1.3em;
+            color: var(--coral-primary);
+            margin-bottom: 25px;
+            font-weight: 700;
+        }
+       
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 700;
+            color: var(--text-dark);
+            font-size: 0.95em;
+        }
+
+        .form-hint {
+            display: block;
+            margin-top: 5px;
+            font-size: 0.85em;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .readonly-field {
+            padding: 14px 18px;
+            background-color: #f5f5f5;
+            border: 2px solid #e0e0e0;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+       
+        .required {
+            color: var(--danger-color);
+            font-weight: 700;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 25px;
+            background: linear-gradient(135deg, #fff8f5, #ffe5d9);
+            border-radius: var(--radius-md);
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .detail-label {
+            font-size: 0.85em;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .detail-value {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .total-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px;
+            background: linear-gradient(135deg, #d4edda, #a8e6cf);
+            border-radius: var(--radius-md);
+            margin-top: 20px;
+        }
+
+        .total-label {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #155724;
+        }
+
+        .total-value {
+            font-size: 2em;
+            font-weight: 800;
+            color: #155724;
+        }
+       
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid var(--peach-light);
+        }
+       
+        select.form-control {
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23636e72' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 12px;
+            padding-right: 40px;
+        }
+       
+        @media (max-width: 768px) {
+            .form-container { 
+                padding: 25px 20px; 
+            }
+            
+            .modern-form { 
+                padding: 25px 20px; 
+            }
+            
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-actions { 
+                flex-direction: column; 
+            }
+            
+            .form-actions .btn { 
+                width: 100%; 
+            }
+
+            .total-display {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+        }
+    </style>
+</div>
+</html>
