@@ -82,7 +82,7 @@ public class PlanController {
 
         model.addAttribute("isEdit", false);
         model.addAttribute("packageId", packageId);
-        model.addAttribute("packageName", packageEntity.getPackageName());
+        model.addAttribute("currentPackage", packageEntity);
         model.addAttribute("planData", new CreatePlanDto());
         model.addAttribute("activityTypes", new String[]{"Flight", "Accommodation", "Vehicle"});
         model.addAttribute("currentUri", request.getRequestURI());

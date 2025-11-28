@@ -56,7 +56,7 @@ public class PackageController {
         }
 
         ReadPackageDto packageDto = dtoMapper.toReadDto(packageOptional.get());
-        model.addAttribute("packageData", packageDto);
+        model.addAttribute("currentPackage", packageDto);
         model.addAttribute("currentUri", request.getRequestURI());
         return "package/detail";
     }
