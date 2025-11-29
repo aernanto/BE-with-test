@@ -140,8 +140,10 @@
                 </div>
                 
                 <div class="plan-actions" th:if="${currentPackage.status == 'Pending'}">
-                    <a th:href="@{/package/{packageId}/plan/{planId}/edit(packageId=${currentPackage.id}, planId=${plan.id})}" 
-                       class="btn-action btn-edit">✏️</a>
+                    <a th:href="@{/package/__${currentPackage.id}__/plan/__${plan.id}__/update}"
+                       class="btn-action btn-edit">
+                       ✏️
+                    </a>
                     <form th:action="@{/package/{packageId}/plan/{planId}/delete(packageId=${currentPackage.id}, planId=${plan.id})}" 
                           method="POST" style="display: inline;">
                         <button type="submit" class="btn-action btn-delete" 
@@ -159,7 +161,7 @@
             <a th:href="@{/package/update/{id}(id=${currentPackage.id})}" 
                class="btn btn-primary"
                th:if="${currentPackage.status == 'Pending'}">✏️ Edit Package</a>
-            <form th:action="@{/package/process/{id}(id=${currentPackage.id})}" 
+            <form th:action="@{/package/{id}/process(id=${currentPackage.id})}" 
                   method="POST" 
                   style="display: inline;"
                   th:if="${currentPackage.status == 'Pending'}">

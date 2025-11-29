@@ -101,7 +101,7 @@ public class PlanController {
             Optional<Package> packageOptional = packageService.getPackageById(packageId);
             model.addAttribute("isEdit", false);
             model.addAttribute("packageId", packageId);
-            model.addAttribute("packageName", packageOptional.map(Package::getPackageName).orElse(""));
+            model.addAttribute("currentPackage", packageOptional.get());
             model.addAttribute("planData", planDto);
             model.addAttribute("activityTypes", new String[]{"Flight", "Accommodation", "Vehicle"});
             model.addAttribute("currentUri", request.getRequestURI());
@@ -118,7 +118,7 @@ public class PlanController {
             Optional<Package> packageOptional = packageService.getPackageById(packageId);
             model.addAttribute("isEdit", false);
             model.addAttribute("packageId", packageId);
-            model.addAttribute("packageName", packageOptional.map(Package::getPackageName).orElse(""));
+            model.addAttribute("currentPackage", packageOptional.get());
             model.addAttribute("planData", planDto);
             model.addAttribute("activityTypes", new String[]{"Flight", "Accommodation", "Vehicle"});
             model.addAttribute("currentUri", request.getRequestURI());
@@ -160,7 +160,7 @@ public class PlanController {
         model.addAttribute("isEdit", true);
         model.addAttribute("packageId", packageId);
         model.addAttribute("planId", planId);
-        model.addAttribute("packageName", packageOptional.get().getPackageName());
+        model.addAttribute("currentPackage", packageOptional.get());
         model.addAttribute("planData", planDto);
         model.addAttribute("activityTypes", new String[]{"Flight", "Accommodation", "Vehicle"});
         model.addAttribute("currentUri", request.getRequestURI());
@@ -181,7 +181,7 @@ public class PlanController {
             model.addAttribute("isEdit", true);
             model.addAttribute("packageId", packageId);
             model.addAttribute("planId", planId);
-            model.addAttribute("packageName", packageOptional.map(Package::getPackageName).orElse(""));
+            model.addAttribute("currentPackage", packageOptional.get());
             model.addAttribute("planData", planDto);
             model.addAttribute("activityTypes", new String[]{"Flight", "Accommodation", "Vehicle"});
             model.addAttribute("currentUri", request.getRequestURI());
@@ -200,7 +200,7 @@ public class PlanController {
             model.addAttribute("isEdit", true);
             model.addAttribute("packageId", packageId);
             model.addAttribute("planId", planId);
-            model.addAttribute("packageName", packageOptional.map(Package::getPackageName).orElse(""));
+            model.addAttribute("currentPackage", packageOptional.get());
             model.addAttribute("planData", planDto);
             model.addAttribute("activityTypes", new String[]{"Flight", "Accommodation", "Vehicle"});
             model.addAttribute("currentUri", request.getRequestURI());

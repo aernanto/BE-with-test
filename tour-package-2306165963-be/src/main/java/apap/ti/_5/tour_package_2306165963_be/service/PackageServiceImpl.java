@@ -125,18 +125,15 @@ public class PackageServiceImpl implements PackageService {
         
         // Check if all plans are complete (have ordered quantities)
         for (Plan plan : packageEntity.getPlans()) {
-            if (plan.getOrderedQuantities() == null || plan.getOrderedQuantities().isEmpty()) {
-                throw new IllegalStateException("Cannot process package with incomplete plans. Plan ID: " + plan.getId());
+            if (!"Processed".equals(plan.getStatus())) {
+                throw new IllegalStateException("All plans must be processed before processing package. Plan ID: " + plan.getId() + " is still " + plan.getStatus());
             }
             
-            // Set plan status to Processed
-            plan.setStatus("Processed");
-            planRepository.save(plan);
-        }
-        
         // Set package status to Processed
         packageEntity.setStatus("Processed");
         packageRepository.save(packageEntity);
+        }
+    
     }
 
     @Override
