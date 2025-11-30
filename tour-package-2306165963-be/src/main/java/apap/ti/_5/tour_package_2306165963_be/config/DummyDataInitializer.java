@@ -240,7 +240,7 @@ public class DummyDataInitializer implements CommandLineRunner {
 
         private Plan createPlan(String packageId, String activityType, Activity activity, int orderedQuota) {
                 Plan plan = Plan.builder()
-                                .id(UUID.randomUUID())
+                                // Don't set ID here - let JPA auto-generate it
                                 .packageId(packageId)
                                 .activityType(activityType)
                                 .price((long) (activity.getPrice() * orderedQuota))
@@ -252,9 +252,10 @@ public class DummyDataInitializer implements CommandLineRunner {
                                 .orderedQuantities(new ArrayList<>())
                                 .build();
 
+                // Create OrderedQuantity - planId will be set automatically by JPA via the
+                // @JoinColumn
                 OrderedQuantity oq = OrderedQuantity.builder()
-                                .id(UUID.randomUUID())
-                                .planId(plan.getId())
+                                // Don't set planId here - JPA will set it via @JoinColumn in Plan entity
                                 .activityId(activity.getId())
                                 .orderedQuota(orderedQuota)
                                 .quota(activity.getCapacity())
@@ -272,7 +273,7 @@ public class DummyDataInitializer implements CommandLineRunner {
         private Plan createPlanUnfinished(String packageId, String activityType, LocalDateTime start, LocalDateTime end,
                         String startLoc, String endLoc) {
                 return Plan.builder()
-                                .id(UUID.randomUUID())
+                                // Don't set ID here - let JPA auto-generate it
                                 .packageId(packageId)
                                 .activityType(activityType)
                                 .price(0L)

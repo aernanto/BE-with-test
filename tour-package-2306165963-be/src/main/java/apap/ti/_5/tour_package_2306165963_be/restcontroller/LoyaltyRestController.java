@@ -12,11 +12,13 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import apap.ti._5.tour_package_2306165963_be.dto.coupon.AddPointsRequestDto;
+import apap.ti._5.tour_package_2306165963_be.dto.coupon.CouponRequestDto;
 import apap.ti._5.tour_package_2306165963_be.dto.loyalty.CouponResponseDTO;
 import apap.ti._5.tour_package_2306165963_be.dto.loyalty.LoyaltyDashboardResponseDTO;
 import apap.ti._5.tour_package_2306165963_be.dto.loyalty.LoyaltyPointsResponseDTO;
@@ -41,8 +43,9 @@ public class LoyaltyRestController {
         this.couponService = couponService;
     }
 
+    // PBI-FE-L1: Get All Available Coupons
     @GetMapping("/loyalty/coupons")
-    @PreAuthorize("hasAnyAuthority('CUSTOMER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('Customer', 'Superadmin')")
     public ResponseEntity<BaseResponseDTO<List<CouponResponseDTO>>> getAvailableCoupons() {
         var baseResponseDTO = new BaseResponseDTO<List<CouponResponseDTO>>();
 
@@ -58,6 +61,93 @@ public class LoyaltyRestController {
         } catch (Exception e) {
             baseResponseDTO.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
             baseResponseDTO.setMessage("Failed to retrieve coupons: " + e.getMessage());
+            baseResponseDTO.setTimestamp(new Date());
+            return new ResponseEntity<>(baseResponseDTO, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // PBI-FE-L3: Create New Coupon (Superadmin only)
+    @PostMapping("/loyalty/coupons")
+    @PreAuthorize("hasAuthority('Superadmin')")
+    public ResponseEntity<BaseResponseDTO<CouponResponseDTO>> createCoupon(
+            @Valid @RequestBody CouponRequestDto dto,
+            BindingResult bindingResult) {
+
+        var baseResponseDTO = new BaseResponseDTO<CouponResponseDTO>();
+
+        if (bindingResult.hasFieldErrors()) {
+            StringBuilder errorMessages = new StringBuilder();
+            List<FieldError> errors = bindingResult.getFieldErrors();
+
+            for (FieldError error : errors) {
+                errorMessages.append(error.getDefaultMessage()).append("; ");
+            }
+
+            baseResponseDTO.setStatus(HttpStatus.BAD_REQUEST.value());
+            baseResponseDTO.setMessage(errorMessages.toString());
+            baseResponseDTO.setTimestamp(new Date());
+            return new ResponseEntity<>(baseResponseDTO, HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            CouponResponseDTO coupon = couponService.createCoupon(dto);
+
+            baseResponseDTO.setStatus(HttpStatus.CREATED.value());
+            baseResponseDTO.setData(coupon);
+            baseResponseDTO.setMessage("Coupon created successfully");
+            baseResponseDTO.setTimestamp(new Date());
+            return new ResponseEntity<>(baseResponseDTO, HttpStatus.CREATED);
+
+        } catch (Exception e) {
+            baseResponseDTO.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            baseResponseDTO.setMessage("Failed to create coupon: " + e.getMessage());
+            baseResponseDTO.setTimestamp(new Date());
+            return new ResponseEntity<>(baseResponseDTO, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // PBI-FE-L4: Update Coupon Details (Superadmin only)
+    @PutMapping("/loyalty/coupons/{id}")
+    @PreAuthorize("hasAuthority('Superadmin')")
+    public ResponseEntity<BaseResponseDTO<CouponResponseDTO>> updateCoupon(
+            @PathVariable UUID id,
+            @Valid @RequestBody CouponRequestDto dto,
+            BindingResult bindingResult) {
+
+        var baseResponseDTO = new BaseResponseDTO<CouponResponseDTO>();
+
+        if (bindingResult.hasFieldErrors()) {
+            StringBuilder errorMessages = new StringBuilder();
+            List<FieldError> errors = bindingResult.getFieldErrors();
+
+            for (FieldError error : errors) {
+                errorMessages.append(error.getDefaultMessage()).append("; ");
+            }
+
+            baseResponseDTO.setStatus(HttpStatus.BAD_REQUEST.value());
+            baseResponseDTO.setMessage(errorMessages.toString());
+            baseResponseDTO.setTimestamp(new Date());
+            return new ResponseEntity<>(baseResponseDTO, HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            CouponResponseDTO coupon = couponService.updateCoupon(id, dto);
+
+            baseResponseDTO.setStatus(HttpStatus.OK.value());
+            baseResponseDTO.setData(coupon);
+            baseResponseDTO.setMessage("Coupon updated successfully");
+            baseResponseDTO.setTimestamp(new Date());
+            return new ResponseEntity<>(baseResponseDTO, HttpStatus.OK);
+
+        } catch (IllegalArgumentException e) {
+            baseResponseDTO.setStatus(HttpStatus.NOT_FOUND.value());
+            baseResponseDTO.setMessage(e.getMessage());
+            baseResponseDTO.setTimestamp(new Date());
+            return new ResponseEntity<>(baseResponseDTO, HttpStatus.NOT_FOUND);
+
+        } catch (Exception e) {
+            baseResponseDTO.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            baseResponseDTO.setMessage("Failed to update coupon: " + e.getMessage());
             baseResponseDTO.setTimestamp(new Date());
             return new ResponseEntity<>(baseResponseDTO, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -102,7 +192,7 @@ public class LoyaltyRestController {
     }
 
     @GetMapping("/loyalty/balance/{userId}")
-    @PreAuthorize("hasAnyAuthority('CUSTOMER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('Customer', 'Superadmin')")
     public ResponseEntity<BaseResponseDTO<LoyaltyPointsResponseDTO>> getBalance(@PathVariable UUID userId) {
         var baseResponseDTO = new BaseResponseDTO<LoyaltyPointsResponseDTO>();
 
@@ -124,7 +214,7 @@ public class LoyaltyRestController {
     }
 
     @GetMapping("/loyalty/dashboard/{userId}")
-    @PreAuthorize("hasAnyAuthority('CUSTOMER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('Customer', 'Superadmin')")
     public ResponseEntity<BaseResponseDTO<LoyaltyDashboardResponseDTO>> getDashboard(@PathVariable UUID userId) {
         var baseResponseDTO = new BaseResponseDTO<LoyaltyDashboardResponseDTO>();
 
@@ -145,8 +235,9 @@ public class LoyaltyRestController {
         }
     }
 
+    // PBI-FE-L5: Purchase Coupon
     @PostMapping("/loyalty/coupons/purchase")
-    @PreAuthorize("hasAnyAuthority('CUSTOMER', 'ADMIN')")
+    @PreAuthorize("hasAuthority('Customer')")
     public ResponseEntity<BaseResponseDTO<PurchasedCouponResponseDTO>> purchaseCoupon(
             @Valid @RequestBody PurchaseCouponRequestDTO request,
             BindingResult bindingResult) {
@@ -189,8 +280,9 @@ public class LoyaltyRestController {
         }
     }
 
+    // PBI-FE-L2: Get Purchased Coupons
     @GetMapping("/loyalty/coupons/purchased/{userId}")
-    @PreAuthorize("hasAnyAuthority('CUSTOMER', 'ADMIN')")
+    @PreAuthorize("hasAuthority('Customer')")
     public ResponseEntity<BaseResponseDTO<List<PurchasedCouponResponseDTO>>> getPurchasedCoupons(
             @PathVariable UUID userId) {
         var baseResponseDTO = new BaseResponseDTO<List<PurchasedCouponResponseDTO>>();
