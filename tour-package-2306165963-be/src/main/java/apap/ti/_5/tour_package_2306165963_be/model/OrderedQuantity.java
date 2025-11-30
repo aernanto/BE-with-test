@@ -17,46 +17,49 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderedQuantity {
-    
+
     @Id
-    private String id;
-    
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
     @Column(name = "plan_id")
-    private String planId; 
-    
+    private UUID planId;
+
     @Column(name = "activity_id")
     private String activityId;
-    
+
     @Column(name = "ordered_quota")
-    private int orderedQuota; 
-    
-    private int quota; 
-    
-    private Long price; 
+    private int orderedQuota;
+
+    private int quota;
+
+    private Long price;
 
     @Column(name = "activity_name")
     private String activityName;
-    
+
     @Column(name = "activity_item")
-    private String activityItem; 
+    private String activityItem;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     @Column(name = "start_date")
     private LocalDateTime startDate;
-    
+
     @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     @Column(name = "end_date")
     private LocalDateTime endDate;
-   
-    @Transient 
+
+    @Transient
     public Long getTotalPrice() {
-        if (this.price == null) return 0L;
+        if (this.price == null)
+            return 0L;
         return this.price * this.orderedQuota;
     }
-    
+
     @Transient
     public String getFormattedPrice() {
-        if (this.price == null) return "Rp 0";
+        if (this.price == null)
+            return "Rp 0";
         return String.format("Rp %,d", this.price);
     }
 

@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.*;
@@ -19,13 +20,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/*
-  Assumsi endpoint:
-  - GET /api/ordered-quantities/{id}
-  - POST /api/plans/{planId}/ordered-quantities
-  - PUT /api/ordered-quantities/{id}?newQuota=5
-  - DELETE /api/ordered-quantities/{id}
-*/
 @WebMvcTest(OrderedQuantityController.class)
 class OrderedQuantityControllerTest {
 
@@ -38,14 +32,17 @@ class OrderedQuantityControllerTest {
     @Autowired
     ObjectMapper objectMapper;
 
+    private final UUID oqId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private final UUID planId = UUID.fromString("00000000-0000-0000-0000-000000000002");
+
     @Test
     void getOrderedQuantityById_found() throws Exception {
-        when(orderedQuantityService.getOrderedQuantityById("oq-1"))
-                .thenReturn(Optional.of(TestDataFactory.oq("oq-1","plan-1","act-1")));
+        when(orderedQuantityService.getOrderedQuantityById(oqId.toString()))
+                .thenReturn(Optional.of(TestDataFactory.oq(oqId, planId, "act-1")));
 
-        mockMvc.perform(get("/api/ordered-quantities/oq-1"))
+        mockMvc.perform(get("/api/ordered-quantities/" + oqId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is("oq-1")));
+                .andExpect(jsonPath("$.id", is(oqId.toString())));
     }
 
     @Test
@@ -54,23 +51,23 @@ class OrderedQuantityControllerTest {
         req.setActivityId("act-1");
         req.setOrderedQuota(2);
 
-        OrderedQuantity resp = TestDataFactory.oq("oq-1","plan-1","act-1");
-        when(orderedQuantityService.createOrderedQuantity(eq("plan-1"), any())).thenReturn(resp);
+        OrderedQuantity resp = TestDataFactory.oq(oqId, planId, "act-1");
+        when(orderedQuantityService.createOrderedQuantity(eq(planId.toString()), any())).thenReturn(resp);
 
-        mockMvc.perform(post("/api/plans/plan-1/ordered-quantities")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
+        mockMvc.perform(post("/api/plans/" + planId + "/ordered-quantities")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id", is("oq-1")));
+                .andExpect(jsonPath("$.id", is(oqId.toString())));
     }
 
     @Test
     void updateOrderedQuantity_ok() throws Exception {
-        OrderedQuantity resp = TestDataFactory.oq("oq-1","plan-1","act-1");
+        OrderedQuantity resp = TestDataFactory.oq(oqId, planId, "act-1");
         resp.setOrderedQuota(5);
-        when(orderedQuantityService.updateOrderedQuantity("oq-1", 5)).thenReturn(resp);
+        when(orderedQuantityService.updateOrderedQuantity(oqId.toString(), 5)).thenReturn(resp);
 
-        mockMvc.perform(put("/api/ordered-quantities/oq-1").param("newQuota","5"))
+        mockMvc.perform(put("/api/ordered-quantities/" + oqId).param("newQuota", "5"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.orderedQuota", is(5)));
     }

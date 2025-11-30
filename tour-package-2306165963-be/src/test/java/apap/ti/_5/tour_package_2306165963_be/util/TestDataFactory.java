@@ -6,6 +6,7 @@ import apap.ti._5.tour_package_2306165963_be.model.Package;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class TestDataFactory {
 
@@ -38,7 +39,7 @@ public class TestDataFactory {
                 .build();
     }
 
-    public static Plan plan(String id, String packageId) {
+    public static Plan plan(UUID id, String packageId) {
         return Plan.builder()
                 .id(id)
                 .packageId(packageId)
@@ -53,7 +54,7 @@ public class TestDataFactory {
                 .build();
     }
 
-    public static OrderedQuantity oq(String id, String planId, String activityId) {
+    public static OrderedQuantity oq(UUID id, UUID planId, String activityId) {
         return OrderedQuantity.builder()
                 .id(id)
                 .planId(planId)
@@ -68,10 +69,10 @@ public class TestDataFactory {
                 .build();
     }
 
-    public static List<OrderedQuantity> oqList(String planId, String actId, int count) {
+    public static List<OrderedQuantity> oqList(UUID planId, String actId, int count) {
         List<OrderedQuantity> list = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            list.add(oq("oq-" + i, planId, actId));
+            list.add(oq(UUID.randomUUID(), planId, actId));
         }
         return list;
     }

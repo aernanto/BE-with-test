@@ -20,6 +20,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,7 +30,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(PlanRestController.class)
-@ContextConfiguration(classes = {PlanControllerTest.TestConfig.class})
+@ContextConfiguration(classes = { PlanControllerTest.TestConfig.class })
 class PlanControllerTest {
 
     @Autowired
@@ -41,6 +42,8 @@ class PlanControllerTest {
     @Autowired
     ObjectMapper objectMapper;
 
+    private final UUID planId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+
     @Configuration
     static class TestConfig {
         @Bean
@@ -51,12 +54,12 @@ class PlanControllerTest {
 
     @Test
     void getPlanById_found() throws Exception {
-        Plan plan = TestDataFactory.plan("plan-1", "pkg-1");
-        when(planService.getPlanById("plan-1")).thenReturn(Optional.of(plan));
+        Plan plan = TestDataFactory.plan(planId, "pkg-1");
+        when(planService.getPlanById(planId.toString())).thenReturn(Optional.of(plan));
 
-        mockMvc.perform(get("/api/plans/plan-1"))
+        mockMvc.perform(get("/api/plans/" + planId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is("plan-1")));
+                .andExpect(jsonPath("$.id", is(planId.toString())));
     }
 
     @Test
@@ -73,64 +76,65 @@ class PlanControllerTest {
         req.setActivityType("Flight");
         req.setPrice(5000000L);
 
-        Plan resp = TestDataFactory.plan("plan-1", "pkg-1");
+        Plan resp = TestDataFactory.plan(planId, "pkg-1");
         when(planService.createPlan(eq("pkg-1"), any())).thenReturn(resp);
 
         mockMvc.perform(post("/api/packages/pkg-1/plans")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id", is("plan-1")));
+                .andExpect(jsonPath("$.id", is(planId.toString())));
     }
 
     @Test
     void updatePlan_ok() throws Exception {
         UpdatePlanDto req = new UpdatePlanDto();
+        req.setId(planId.toString());
         req.setPrice(6000000L);
 
-        Plan saved = TestDataFactory.plan("plan-1", "pkg-1");
+        Plan saved = TestDataFactory.plan(planId, "pkg-1");
         saved.setPrice(6000000L);
 
         when(planService.updatePlan(any())).thenReturn(saved);
 
-        mockMvc.perform(put("/api/plans/plan-1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
+        mockMvc.perform(put("/api/plans/" + planId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.price", is(6000000)));
     }
 
     @Test
     void deletePlan_noContent() throws Exception {
-        when(planService.deletePlan("plan-1")).thenReturn(true);
+        when(planService.deletePlan(planId.toString())).thenReturn(true);
 
-        mockMvc.perform(delete("/api/plans/plan-1"))
+        mockMvc.perform(delete("/api/plans/" + planId))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void deletePlan_conflict_whenProcessed() throws Exception {
         Mockito.doThrow(new IllegalStateException("Cannot delete processed plan"))
-               .when(planService).deletePlan("plan-1");
+                .when(planService).deletePlan(planId.toString());
 
-        mockMvc.perform(delete("/api/plans/plan-1"))
+        mockMvc.perform(delete("/api/plans/" + planId))
                 .andExpect(status().isConflict());
     }
 
     @Test
     void processPlan_ok() throws Exception {
-        Mockito.doNothing().when(planService).processPlan("plan-1");
+        Mockito.doNothing().when(planService).processPlan(planId.toString());
 
-        mockMvc.perform(post("/api/plans/plan-1/process"))
+        mockMvc.perform(post("/api/plans/" + planId + "/process"))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void processPlan_badRequest_whenError() throws Exception {
         Mockito.doThrow(new RuntimeException("Error"))
-               .when(planService).processPlan("plan-1");
+                .when(planService).processPlan(planId.toString());
 
-        mockMvc.perform(post("/api/plans/plan-1/process"))
+        mockMvc.perform(post("/api/plans/" + planId + "/process"))
                 .andExpect(status().isBadRequest());
     }
 }

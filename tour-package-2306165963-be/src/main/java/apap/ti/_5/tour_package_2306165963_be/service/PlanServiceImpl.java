@@ -20,10 +20,10 @@ public class PlanServiceImpl implements PlanService {
 
     @Autowired
     private PlanRepository planRepository;
-    
+
     @Autowired
     private PackageRepository packageRepository;
-    
+
     @Autowired
     private OrderedQuantityRepository orderedQuantityRepository;
 
@@ -34,12 +34,12 @@ public class PlanServiceImpl implements PlanService {
 
     @Override
     public Optional<Plan> getPlanById(String id) {
-        return planRepository.findById(id);
+        return planRepository.findById(UUID.fromString(id));
     }
 
     @Override
     public Optional<Plan> getPlanWithOrderedQuantities(String id) {
-        return planRepository.findByIdWithOrderedQuantities(id);
+        return planRepository.findByIdWithOrderedQuantities(UUID.fromString(id));
     }
 
     @Override
@@ -48,25 +48,25 @@ public class PlanServiceImpl implements PlanService {
         if (packageOptional.isEmpty()) {
             throw new IllegalArgumentException("Package not found with ID: " + packageId);
         }
-        
+
         Package packageEntity = packageOptional.get();
-        
+
         // Can only create plan for Pending packages
         if (!"Pending".equals(packageEntity.getStatus())) {
             throw new IllegalStateException("Can only create plan for Pending packages");
         }
-        
+
         validatePlan(plan);
-        
-        if (plan.getStartDate().isBefore(packageEntity.getStartDate()) || 
-            plan.getEndDate().isAfter(packageEntity.getEndDate())) {
+
+        if (plan.getStartDate().isBefore(packageEntity.getStartDate()) ||
+                plan.getEndDate().isAfter(packageEntity.getEndDate())) {
             throw new IllegalArgumentException("Plan dates must be within package dates");
         }
-        
-        plan.setId(UUID.randomUUID().toString());
+
+        plan.setId(UUID.randomUUID());
         plan.setPackageId(packageId);
         plan.setStatus("Unfulfilled"); // Default status
-        
+
         return planRepository.save(plan);
     }
 
@@ -76,99 +76,102 @@ public class PlanServiceImpl implements PlanService {
         if (existingPlan.isEmpty()) {
             throw new IllegalArgumentException("Plan not found with ID: " + plan.getId());
         }
-        
+
         Plan existing = existingPlan.get();
-        
-        // Can only update if status = Pending
-        if (!"Pending".equals(existing.getStatus())) {
-            throw new IllegalStateException("Can only update plans with status Pending");
-        }
-        
+
         Optional<Package> packageOptional = packageRepository.findById(existing.getPackageId());
         if (packageOptional.isPresent()) {
             Package packageEntity = packageOptional.get();
-            
-            if (plan.getStartDate().isBefore(packageEntity.getStartDate()) || 
-                plan.getEndDate().isAfter(packageEntity.getEndDate())) {
+
+            // Can only update if Package status = Pending
+            if (!"Pending".equals(packageEntity.getStatus())) {
+                throw new IllegalStateException("Can only update plans for Pending packages");
+            }
+
+            if (plan.getStartDate().isBefore(packageEntity.getStartDate()) ||
+                    plan.getEndDate().isAfter(packageEntity.getEndDate())) {
                 throw new IllegalArgumentException("Plan dates must be within package dates");
             }
         }
-        
+
         validatePlan(plan);
-        
+
         existing.setActivityType(plan.getActivityType());
         existing.setPrice(plan.getPrice());
         existing.setStartDate(plan.getStartDate());
         existing.setEndDate(plan.getEndDate());
         existing.setStartLocation(plan.getStartLocation());
         existing.setEndLocation(plan.getEndLocation());
-        
+
         return planRepository.save(existing);
     }
 
     @Override
     public boolean deletePlan(String id) {
-        Optional<Plan> planOptional = planRepository.findById(id);
-        
+        Optional<Plan> planOptional = planRepository.findById(UUID.fromString(id));
+
         if (planOptional.isEmpty()) {
             return false;
         }
-        
+
         Plan plan = planOptional.get();
-        
-        // Can only delete if status = Pending
-        if (!"Pending".equals(plan.getStatus())) {
-            throw new IllegalStateException("Can only delete plans with status Pending");
+
+        Optional<Package> packageOptional = packageRepository.findById(plan.getPackageId());
+        if (packageOptional.isPresent()) {
+            // Can only delete if Package status = Pending
+            if (!"Pending".equals(packageOptional.get().getStatus())) {
+                throw new IllegalStateException("Can only delete plans for Pending packages");
+            }
         }
-        
-        orderedQuantityRepository.deleteByPlanId(id);
-        planRepository.deleteById(id);
+
+        orderedQuantityRepository.deleteByPlanId(UUID.fromString(id));
+        planRepository.deleteById(UUID.fromString(id));
         return true;
     }
 
     @Override
     public void processPlan(String id) {
-        Optional<Plan> planOptional = planRepository.findByIdWithOrderedQuantities(id);
-        
+        Optional<Plan> planOptional = planRepository.findByIdWithOrderedQuantities(UUID.fromString(id));
+
         if (planOptional.isEmpty()) {
             throw new IllegalArgumentException("Plan not found with ID: " + id);
         }
-        
+
         Plan plan = planOptional.get();
-        
+
         // Already fulfilled
         if ("Fulfilled".equals(plan.getStatus())) {
             throw new IllegalStateException("Plan is already fulfilled");
         }
-        
+
         // Must have ordered quantities
         if (plan.getOrderedQuantities() == null || plan.getOrderedQuantities().isEmpty()) {
             throw new IllegalStateException("Cannot process plan without ordered quantities");
         }
-        
+
         // Calculate total price from ordered quantities
         Long totalPrice = calculateTotalPlanPrice(id);
         plan.setPrice(totalPrice);
-        
+
         Optional<Package> pkgOpt = packageRepository.findById(plan.getPackageId());
         if (pkgOpt.isEmpty()) {
             throw new IllegalStateException("Package not found for this plan");
         }
-        
+
         Package pkg = pkgOpt.get();
         int packageQuota = pkg.getQuota();
-        
+
         // Calculate total ordered quantity across this plan
         int totalOrderedQuantity = plan.getOrderedQuantities().stream()
                 .mapToInt(OrderedQuantity::getOrderedQuota)
                 .sum();
-        
+
         if (totalOrderedQuantity >= packageQuota) {
             plan.setStatus("Fulfilled");
         } else {
             plan.setStatus("Unfulfilled");
         }
-        
+
         planRepository.save(plan);
     }
 
@@ -179,7 +182,7 @@ public class PlanServiceImpl implements PlanService {
 
     @Override
     public Long calculateTotalPlanPrice(String planId) {
-        Long totalPrice = orderedQuantityRepository.sumTotalPriceByPlanId(planId);
+        Long totalPrice = orderedQuantityRepository.sumTotalPriceByPlanId(UUID.fromString(planId));
         return totalPrice != null ? totalPrice : 0L;
     }
 
@@ -187,27 +190,27 @@ public class PlanServiceImpl implements PlanService {
         if (plan.getEndDate().isBefore(plan.getStartDate())) {
             throw new IllegalArgumentException("End date must be after start date");
         }
-        
+
         if (plan.getPrice() != null && plan.getPrice() < 0) {
             throw new IllegalArgumentException("Price cannot be negative");
         }
-        
+
         if (!isValidActivityType(plan.getActivityType())) {
             throw new IllegalArgumentException("Invalid activity type: " + plan.getActivityType());
         }
-        
+
         if (plan.getStartLocation() == null || plan.getStartLocation().trim().isEmpty()) {
             throw new IllegalArgumentException("Start location is required");
         }
-        
+
         if (plan.getEndLocation() == null || plan.getEndLocation().trim().isEmpty()) {
             throw new IllegalArgumentException("End location is required");
         }
     }
-    
+
     private boolean isValidActivityType(String type) {
-        return "Flight".equalsIgnoreCase(type) || 
-               "Accommodation".equalsIgnoreCase(type) || 
-               "Vehicle".equalsIgnoreCase(type);
+        return "Flight".equalsIgnoreCase(type) ||
+                "Accommodation".equalsIgnoreCase(type) ||
+                "Vehicle".equalsIgnoreCase(type);
     }
 }

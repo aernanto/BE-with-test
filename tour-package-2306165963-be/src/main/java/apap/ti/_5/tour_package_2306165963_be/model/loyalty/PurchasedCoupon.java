@@ -1,28 +1,48 @@
 package apap.ti._5.tour_package_2306165963_be.model.loyalty;
-import jakarta.persistence.*;
-import lombok.*;
+
+import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Entity
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Entity
+@Table(name = "purchased_coupons")
 public class PurchasedCoupon {
-    @Id
-    private String id;
-    
-    private String uniqueCode; // Format khusus
-    private String customerId;
-    
-    @ManyToOne
-    @JoinColumn(name = "coupon_id")
-    private Coupon coupon;
 
-    private Boolean isUsed = false;
+    @Id
+    @GeneratedValue(generator = "system-uuid")
+    private UUID id;
+
+    @Column(name = "code", nullable = false, unique = true)
+    private String code;
+
+    @Column(name = "customer_id", nullable = false)
+    private UUID customerId;
+
+    @Column(name = "coupon_id", nullable = false)
+    private UUID couponId;
+
+    @Column(name = "purchased_date", nullable = false)
+    private LocalDateTime purchasedDate;
+
+    @Column(name = "used_date")
+    private LocalDateTime usedDate;
 
     @PrePersist
-    public void generateId() {
-        if (this.id == null) this.id = UUID.randomUUID().toString();
+    void onCreate() {
+        purchasedDate = LocalDateTime.now();
     }
 }

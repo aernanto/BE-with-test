@@ -1,4 +1,7 @@
-package apap.ti._5.tour_package_2306165963_be.dto.coupon;
+package apap.ti._5.tour_package_2306165963_be.dto.loyalty;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,9 +12,13 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CouponRequestDto {
+public class CouponResponseDTO {
+
+    private UUID id;
     private String name;
     private String description;
     private Integer points;
     private Integer percentOff;
+    private LocalDateTime createdDate;
+    private LocalDateTime updatedDate;
 }

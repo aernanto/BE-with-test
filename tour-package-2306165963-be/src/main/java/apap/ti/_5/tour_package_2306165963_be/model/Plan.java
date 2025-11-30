@@ -21,7 +21,8 @@ import java.util.UUID;
 public class Plan {
     
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
     
     // @ManyToOne(fetch = FetchType.LAZY)
     @Column(name = "package_id")

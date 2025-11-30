@@ -1,4 +1,6 @@
-package apap.ti._5.tour_package_2306165963_be.dto.coupon;
+package apap.ti._5.tour_package_2306165963_be.dto.loyalty;
+
+import java.util.UUID;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,9 +11,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CouponRequestDto {
-    private String name;
-    private String description;
+public class LoyaltyPointsResponseDTO {
+
+    private UUID customerId;
     private Integer points;
-    private Integer percentOff;
 }

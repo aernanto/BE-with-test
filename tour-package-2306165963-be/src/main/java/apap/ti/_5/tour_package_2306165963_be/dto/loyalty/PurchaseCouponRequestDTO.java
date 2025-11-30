@@ -1,8 +1,7 @@
-package apap.ti._5.tour_package_2306165963_be.dto.coupon;
+package apap.ti._5.tour_package_2306165963_be.dto.loyalty;
 
 import java.util.UUID;
 
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,14 +12,11 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AddPointsRequestDto {
+public class PurchaseCouponRequestDTO {
 
     @NotNull(message = "Customer ID is required")
     private UUID customerId;
 
-    @NotNull(message = "Points is required")
-    @Min(value = 1, message = "Points to add must be at least 1")
-    private Integer points;
-
-    private String reference;
+    @NotNull(message = "Coupon ID is required")
+    private UUID couponId;
 }

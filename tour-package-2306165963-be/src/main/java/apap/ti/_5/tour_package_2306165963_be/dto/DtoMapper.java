@@ -16,7 +16,8 @@ import java.util.stream.Collectors;
 @Component
 public class DtoMapper {
 
-    public DtoMapper() {}
+    public DtoMapper() {
+    }
 
     // ========== Activity ==========
     public Activity toEntity(CreateActivityDto dto) {
@@ -49,8 +50,9 @@ public class DtoMapper {
     }
 
     public ReadActivityDto toReadDto(Activity entity) {
-        if (entity == null) return null;
-        
+        if (entity == null)
+            return null;
+
         return ReadActivityDto.builder()
                 .id(entity.getId())
                 .activityName(entity.getActivityName())
@@ -66,8 +68,9 @@ public class DtoMapper {
     }
 
     public UpdateActivityDto toUpdateDto(Activity entity) {
-        if (entity == null) return null;
-        
+        if (entity == null)
+            return null;
+
         return UpdateActivityDto.builder()
                 .id(entity.getId())
                 .activityName(entity.getActivityName())
@@ -110,13 +113,14 @@ public class DtoMapper {
     }
 
     public ReadPackageDto toReadDto(Package entity) {
-        if (entity == null) return null;
-        
+        if (entity == null)
+            return null;
+
         // ✅ ENSURE plans is NEVER null
         if (entity.getPlans() == null) {
             entity.setPlans(new ArrayList<>());
         }
-        
+
         return ReadPackageDto.builder()
                 .id(entity.getId())
                 .userId(entity.getUserId())
@@ -133,8 +137,9 @@ public class DtoMapper {
     }
 
     public UpdatePackageDto toUpdateDto(Package entity) {
-        if (entity == null) return null;
-        
+        if (entity == null)
+            return null;
+
         return UpdatePackageDto.builder()
                 .id(entity.getId())
                 .userId(entity.getUserId())
@@ -162,7 +167,7 @@ public class DtoMapper {
 
     public Plan toEntity(UpdatePlanDto dto) {
         return Plan.builder()
-                .id(dto.getId())
+                .id(java.util.UUID.fromString(dto.getId()))
                 .activityType(dto.getActivityType())
                 .price(dto.getPrice())
                 .startDate(dto.getStartDate())
@@ -174,15 +179,16 @@ public class DtoMapper {
     }
 
     public ReadPlanDto toReadDto(Plan entity) {
-        if (entity == null) return null;
-        
+        if (entity == null)
+            return null;
+
         // ✅ ENSURE orderedQuantities is NEVER null
         if (entity.getOrderedQuantities() == null) {
             entity.setOrderedQuantities(new ArrayList<>());
         }
-        
+
         return ReadPlanDto.builder()
-                .id(entity.getId())
+                .id(entity.getId().toString())
                 .packageId(entity.getPackageId())
                 .activityType(entity.getActivityType())
                 .price(entity.getPrice() != null ? entity.getPrice() : 0L)
@@ -198,10 +204,11 @@ public class DtoMapper {
     }
 
     public UpdatePlanDto toUpdateDto(Plan entity) {
-        if (entity == null) return null;
-        
+        if (entity == null)
+            return null;
+
         return UpdatePlanDto.builder()
-                .id(entity.getId())
+                .id(entity.getId().toString())
                 .activityType(entity.getActivityType())
                 .price(entity.getPrice())
                 .startDate(entity.getStartDate())
@@ -220,11 +227,12 @@ public class DtoMapper {
     }
 
     public ReadOrderedQuantityDto toReadDto(OrderedQuantity entity) {
-        if (entity == null) return null;
-        
+        if (entity == null)
+            return null;
+
         return ReadOrderedQuantityDto.builder()
-                .id(entity.getId())
-                .planId(entity.getPlanId())
+                .id(entity.getId().toString())
+                .planId(entity.getPlanId().toString())
                 .activityId(entity.getActivityId())
                 .orderedQuota(entity.getOrderedQuota())
                 .quota(entity.getQuota())
@@ -237,10 +245,11 @@ public class DtoMapper {
     }
 
     public UpdateOrderedQuantityDto toUpdateDto(OrderedQuantity entity) {
-        if (entity == null) return null;
-        
+        if (entity == null)
+            return null;
+
         return UpdateOrderedQuantityDto.builder()
-                .id(entity.getId())
+                .id(entity.getId().toString())
                 .orderedQuota(entity.getOrderedQuota())
                 .build();
     }
