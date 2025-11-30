@@ -3,6 +3,7 @@ package apap.ti._5.tour_package_2306165963_be.restcontroller;
 import apap.ti._5.tour_package_2306165963_be.service.StatisticsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Year;
@@ -18,8 +19,11 @@ public class StatisticsRestController {
 
     /**
      * GET /api/statistics/revenue?year=2025&month=1
-     * Get revenue statistics by activity type for a specific year and optional month
+     * Get revenue statistics by activity type for a specific year and optional
+     * month
+     * Only accessible by Superadmin and TourPackageVendor (PBI-FE-T22)
      */
+    @PreAuthorize("hasAnyAuthority('Superadmin', 'TourPackageVendor')")
     @GetMapping("/revenue")
     public ResponseEntity<Map<String, Object>> getRevenueStatistics(
             @RequestParam(required = false) Integer year,
@@ -55,15 +59,17 @@ public class StatisticsRestController {
     /**
      * GET /api/statistics/revenue/yearly/2025
      * Get monthly revenue breakdown for an entire year
+     * Only accessible by Superadmin and TourPackageVendor (PBI-FE-T23)
      */
+    @PreAuthorize("hasAnyAuthority('Superadmin', 'TourPackageVendor')")
     @GetMapping("/revenue/yearly/{year}")
     public ResponseEntity<Map<String, Object>> getYearlyRevenue(@PathVariable Integer year) {
-        
+
         Map<String, Object> response = new HashMap<>();
         response.put("year", year);
-        
+
         Map<Integer, Long> monthlyRevenue = new HashMap<>();
-        
+
         for (int month = 1; month <= 12; month++) {
             Map<String, Long> revenueByType = statisticsService.getRevenueByActivityType(year, month);
             long monthTotal = revenueByType.values().stream()
@@ -71,9 +77,9 @@ public class StatisticsRestController {
                     .sum();
             monthlyRevenue.put(month, monthTotal);
         }
-        
+
         response.put("monthlyRevenue", monthlyRevenue);
-        
+
         long yearTotal = monthlyRevenue.values().stream()
                 .mapToLong(Long::longValue)
                 .sum();
@@ -85,7 +91,9 @@ public class StatisticsRestController {
     /**
      * GET /api/statistics/revenue/monthly/2025/1
      * Get detailed revenue breakdown for a specific month
+     * Only accessible by Superadmin and TourPackageVendor (PBI-FE-T24)
      */
+    @PreAuthorize("hasAnyAuthority('Superadmin', 'TourPackageVendor')")
     @GetMapping("/revenue/monthly/{year}/{month}")
     public ResponseEntity<Map<String, Object>> getMonthlyRevenue(
             @PathVariable Integer year,
