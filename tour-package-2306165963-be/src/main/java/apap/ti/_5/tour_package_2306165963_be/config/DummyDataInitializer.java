@@ -2,337 +2,301 @@ package apap.ti._5.tour_package_2306165963_be.config;
 
 import apap.ti._5.tour_package_2306165963_be.model.*;
 import apap.ti._5.tour_package_2306165963_be.model.Package;
-import apap.ti._5.tour_package_2306165963_be.model.loyalty.Coupon;
-import apap.ti._5.tour_package_2306165963_be.model.loyalty.Customer;
-import apap.ti._5.tour_package_2306165963_be.model.loyalty.LoyaltyPoints;
-import apap.ti._5.tour_package_2306165963_be.model.loyalty.PurchasedCoupon;
 import apap.ti._5.tour_package_2306165963_be.repository.*;
-import apap.ti._5.tour_package_2306165963_be.service.LocationService;
-import com.github.javafaker.Faker;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class DummyDataInitializer implements CommandLineRunner {
 
-        private final ActivityRepository activityRepository;
-        private final PackageRepository packageRepository;
-        private final PlanRepository planRepository;
-        private final OrderedQuantityRepository orderedQuantityRepository;
-        private final CustomerRepository customerRepository;
-        private final CouponRepository couponRepository;
-        private final LoyaltyPointsRepository loyaltyPointsRepository;
-        private final PurchasedCouponRepository purchasedCouponRepository;
-        private final LocationService locationService;
+    @Autowired
+    private ActivityRepository activityRepository;
 
-        @Override
-        @Transactional
-        public void run(String... args) {
-                if (activityRepository.count() > 0) {
-                        log.info("✅ Dummy data already exists. Skipping initialization.");
-                        return;
-                }
+    @PersistenceContext
+    private EntityManager entityManager;
 
-                // ANSI color codes
-                String RESET = "\u001B[0m";
-                String BOLD = "\u001B[1m";
-                String CYAN = "\u001B[36m";
-                String GREEN = "\u001B[32m";
-                String YELLOW = "\u001B[33m";
-                String BLUE = "\u001B[34m";
-                String MAGENTA = "\u001B[35m";
-
-                System.out.println("\n" + CYAN + "╔" + "═".repeat(78) + "╗" + RESET);
-                System.out.println(
-                                CYAN + "║" + RESET + BOLD + "  🌍  Tour Package & Loyalty System - Dummy Data Generator"
-                                                + " ".repeat(18) + CYAN + "║" + RESET);
-                System.out.println(CYAN + "╚" + "═".repeat(78) + "╝" + RESET + "\n");
-
-                Faker faker = new Faker(new Locale("id", "ID"));
-                Random random = new Random();
-
-                // 1. Create Customers
-                System.out.println(BOLD + BLUE + "\n┌─ [1/5] Creating Customers" + RESET);
-                System.out.println(BLUE + "│" + RESET);
-                List<Customer> customers = new ArrayList<>();
-                for (int i = 0; i < 10; i++) {
-                        String name = faker.name().fullName();
-                        Customer customer = Customer.builder()
-                                        .id(UUID.randomUUID().toString())
-                                        .name(name)
-                                        .loyaltyPoints(0)
-                                        .build();
-                        customers.add(customerRepository.save(customer));
-                        System.out.println(BLUE + "│  " + RESET + "➤ " + name);
-                }
-                System.out.println(BLUE + "│" + RESET);
-                System.out.println(
-                                BLUE + "└─" + RESET + GREEN + " ✓ Created " + customers.size() + " customers" + RESET);
-
-                // 2. Create Activities (based on LocationService)
-                System.out.println(BOLD + MAGENTA + "\n┌─ [2/5] Creating Activities (from Locations)" + RESET);
-                System.out.println(MAGENTA + "│" + RESET);
-
-                List<Activity> activities = new ArrayList<>();
-                try {
-                        // Fetch provinces and regencies
-                        var provinces = locationService.getAllProvinces().block();
-                        if (provinces != null && !provinces.isEmpty()) {
-                                List<Map<String, String>> locations = new ArrayList<>();
-                                int provLimit = 3;
-                                int regLimit = 2;
-
-                                for (int i = 0; i < Math.min(provinces.size(), provLimit); i++) {
-                                        Map<String, Object> p = provinces.get(i);
-                                        String pCode = String.valueOf(p.get("id"));
-                                        String pName = String.valueOf(p.get("name"));
-
-                                        var regencies = locationService.getRegenciesByProvince(pCode).block();
-                                        if (regencies != null) {
-                                                for (int j = 0; j < Math.min(regencies.size(), regLimit); j++) {
-                                                        Map<String, Object> r = regencies.get(j);
-                                                        String rName = String.valueOf(r.get("name"));
-                                                        Map<String, String> loc = new HashMap<>();
-                                                        loc.put("label", pName + " - " + rName);
-                                                        locations.add(loc);
-                                                }
-                                        }
-                                }
-
-                                if (locations.size() >= 2) {
-                                        LocalDateTime base = LocalDateTime.now().plusDays(7);
-                                        int seq = 1;
-
-                                        // Accommodation: per location
-                                        for (Map<String, String> loc : locations) {
-                                                String label = loc.get("label");
-                                                Activity acc = Activity.builder()
-                                                                .id(UUID.randomUUID().toString())
-                                                                .activityName("Hotel "
-                                                                                + faker.address().buildingNumber()
-                                                                                + " @ " + label)
-                                                                .activityItem("Room " + seq)
-                                                                .activityType("Accommodation")
-                                                                .capacity(100)
-                                                                .price(500_000L + (seq % 5) * 50_000L)
-                                                                .startDate(base.withHour(14).withMinute(0))
-                                                                .endDate(base.plusDays(2).withHour(12).withMinute(0))
-                                                                .startLocation(label)
-                                                                .endLocation(label)
-                                                                .build();
-                                                activities.add(activityRepository.save(acc));
-                                                seq++;
-                                        }
-
-                                        // Flight & Vehicle: between locations
-                                        for (int i = 0; i < locations.size(); i++) {
-                                                for (int j = 0; j < locations.size(); j++) {
-                                                        if (i == j)
-                                                                continue;
-                                                        String start = locations.get(i).get("label");
-                                                        String end = locations.get(j).get("label");
-
-                                                        Activity flight = Activity.builder()
-                                                                        .id(UUID.randomUUID().toString())
-                                                                        .activityName("Flight " + seq + " (" + start
-                                                                                        + " → " + end + ")")
-                                                                        .activityItem("Ticket " + seq)
-                                                                        .activityType("Flight")
-                                                                        .capacity(150)
-                                                                        .price(1_000_000L + (seq % 7) * 100_000L)
-                                                                        .startDate(base.withHour(8).withMinute(0))
-                                                                        .endDate(base.withHour(10).withMinute(0))
-                                                                        .startLocation(start)
-                                                                        .endLocation(end)
-                                                                        .build();
-                                                        activities.add(activityRepository.save(flight));
-                                                        seq++;
-
-                                                        Activity vehicle = Activity.builder()
-                                                                        .id(UUID.randomUUID().toString())
-                                                                        .activityName("Rental " + seq + " (" + start
-                                                                                        + " → " + end + ")")
-                                                                        .activityItem("Car " + seq)
-                                                                        .activityType("Vehicle")
-                                                                        .capacity(50)
-                                                                        .price(400_000L + (seq % 7) * 50_000L)
-                                                                        .startDate(base.withHour(9).withMinute(0))
-                                                                        .endDate(base.plusDays(1).withHour(18)
-                                                                                        .withMinute(0))
-                                                                        .startLocation(start)
-                                                                        .endLocation(end)
-                                                                        .build();
-                                                        activities.add(activityRepository.save(vehicle));
-                                                        seq++;
-                                                }
-                                        }
-                                }
-                        }
-                } catch (Exception e) {
-                        log.error("Failed to fetch locations", e);
-                        // Fallback activities if location service fails
-                        LocalDateTime now = LocalDateTime.now();
-                        activities.add(activityRepository.save(Activity.builder()
-                                        .id(UUID.randomUUID().toString())
-                                        .activityName("Fallback Flight")
-                                        .activityType("Flight")
-                                        .activityItem("Ticket")
-                                        .capacity(100)
-                                        .price(1000000L)
-                                        .startDate(now.plusDays(1))
-                                        .endDate(now.plusDays(1).plusHours(2))
-                                        .startLocation("City A")
-                                        .endLocation("City B")
-                                        .build()));
-                }
-                System.out.println(MAGENTA + "│" + RESET);
-                System.out.println(MAGENTA + "└─" + RESET + GREEN + " ✓ Created " + activities.size() + " activities"
-                                + RESET);
-
-                // 3. Create Packages
-                System.out.println(BOLD + YELLOW + "\n┌─ [3/5] Creating Packages" + RESET);
-                System.out.println(YELLOW + "│" + RESET);
-
-                List<Activity> flights = activities.stream().filter(a -> "Flight".equals(a.getActivityType()))
-                                .collect(Collectors.toList());
-                List<Activity> hotels = activities.stream().filter(a -> "Accommodation".equals(a.getActivityType()))
-                                .collect(Collectors.toList());
-
-                int packageCount = 0;
-                if (!activities.isEmpty()) {
-                        for (int i = 0; i < 15; i++) {
-                                Customer owner = customers.get(random.nextInt(customers.size()));
-                                String pkgName = faker.address().cityName() + " " + faker.commerce().material()
-                                                + " Trip";
-
-                                Package pkg = Package.builder()
-                                                .id("PKG-" + System.currentTimeMillis() + "-" + i)
-                                                .userId(owner.getId())
-                                                .packageName(pkgName)
-                                                .quota(5 + random.nextInt(10))
-                                                .price(0L)
-                                                .status(i % 5 == 0 ? "Processed" : "Pending")
-                                                .startDate(LocalDateTime.now().plusDays(random.nextInt(10)))
-                                                .endDate(LocalDateTime.now().plusDays(10 + random.nextInt(10)))
-                                                .plans(new ArrayList<>())
-                                                .build();
-
-                                // Add Plans
-                                int numPlans = 1 + random.nextInt(3);
-                                for (int p = 0; p < numPlans; p++) {
-                                        Activity act = null;
-                                        if (p == 0 && !flights.isEmpty())
-                                                act = flights.get(random.nextInt(flights.size()));
-                                        else if (!hotels.isEmpty())
-                                                act = hotels.get(random.nextInt(hotels.size()));
-                                        else
-                                                act = activities.get(random.nextInt(activities.size()));
-
-                                        if (act != null) {
-                                                Plan plan = Plan.builder()
-                                                                .packageId(pkg.getId())
-                                                                .activityType(act.getActivityType())
-                                                                .price(0L)
-                                                                .status("Unfulfilled")
-                                                                .startDate(act.getStartDate())
-                                                                .endDate(act.getEndDate())
-                                                                .startLocation(act.getStartLocation())
-                                                                .endLocation(act.getEndLocation())
-                                                                .orderedQuantities(new ArrayList<>())
-                                                                .build();
-
-                                                // Add OrderedQuantity
-                                                OrderedQuantity oq = OrderedQuantity.builder()
-                                                                .activityId(act.getId())
-                                                                .orderedQuota(1 + random.nextInt(3))
-                                                                .quota(act.getCapacity())
-                                                                .price(act.getPrice())
-                                                                .activityName(act.getActivityName())
-                                                                .activityItem(act.getActivityItem())
-                                                                .startDate(act.getStartDate())
-                                                                .endDate(act.getEndDate())
-                                                                .build();
-
-                                                plan.getOrderedQuantities().add(oq);
-                                                plan.setPrice(plan.getPrice() + (oq.getPrice() * oq.getOrderedQuota()));
-
-                                                pkg.getPlans().add(plan);
-                                                pkg.setPrice(pkg.getPrice() + plan.getPrice());
-                                        }
-                                }
-                                packageRepository.save(pkg);
-                                packageCount++;
-                                System.out.println(
-                                                YELLOW + "│  " + RESET + "➤ " + pkgName + " (" + pkg.getStatus() + ")");
-                        }
-                }
-                System.out.println(YELLOW + "│" + RESET);
-                System.out.println(YELLOW + "└─" + RESET + GREEN + " ✓ Created " + packageCount + " packages" + RESET);
-
-                // 4. Create Coupons
-                System.out.println(BOLD + CYAN + "\n┌─ [4/5] Creating Coupons" + RESET);
-                System.out.println(CYAN + "│" + RESET);
-                List<Coupon> coupons = new ArrayList<>();
-                for (int i = 0; i < 5; i++) {
-                        Coupon coupon = Coupon.builder()
-                                        .name(faker.commerce().promotionCode() + " DEAL")
-                                        .description("Discount for " + faker.commerce().productName())
-                                        .points(faker.number().numberBetween(100, 1000))
-                                        .percentOff(faker.number().numberBetween(5, 50))
-                                        .build();
-                        coupons.add(couponRepository.save(coupon));
-                        System.out.println(CYAN + "│  " + RESET + "➤ " + coupon.getName() + " ("
-                                        + coupon.getPercentOff() + "% OFF)");
-                }
-                System.out.println(CYAN + "│" + RESET);
-                System.out.println(CYAN + "└─" + RESET + GREEN + " ✓ Created " + coupons.size() + " coupons" + RESET);
-
-                // 5. Create Loyalty Points & Purchased Coupons
-                System.out.println(BOLD + MAGENTA + "\n┌─ [5/5] Creating Loyalty Data" + RESET);
-                System.out.println(MAGENTA + "│" + RESET);
-                int purchasedCount = 0;
-                for (Customer customer : customers) {
-                        // Points
-                        int pointsVal = faker.number().numberBetween(500, 5000);
-                        LoyaltyPoints points = LoyaltyPoints.builder()
-                                        .customerId(UUID.fromString(customer.getId()))
-                                        .points(pointsVal)
-                                        .build();
-                        loyaltyPointsRepository.save(points);
-
-                        // Update customer entity too for consistency
-                        customer.setLoyaltyPoints(pointsVal);
-                        customerRepository.save(customer);
-
-                        // Purchased Coupons
-                        if (!coupons.isEmpty() && random.nextBoolean()) {
-                                Coupon coupon = coupons.get(random.nextInt(coupons.size()));
-                                PurchasedCoupon pc = PurchasedCoupon.builder()
-                                                .code(UUID.randomUUID().toString().substring(0, 8).toUpperCase())
-                                                .customerId(UUID.fromString(customer.getId()))
-                                                .couponId(coupon.getId())
-                                                .purchasedDate(LocalDateTime.now().minusDays(random.nextInt(30)))
-                                                .build();
-                                purchasedCouponRepository.save(pc);
-                                purchasedCount++;
-                        }
-                }
-                System.out.println(MAGENTA + "│" + RESET);
-                System.out.println(MAGENTA + "└─" + RESET + GREEN + " ✓ Assigned points & created " + purchasedCount
-                                + " purchased coupons" + RESET);
-
-                System.out.println("\n" + CYAN + "╔" + "═".repeat(78) + "╗" + RESET);
-                System.out.println(CYAN + "║" + RESET + BOLD + GREEN + "  ✓ Data Generation Complete!"
-                                + " ".repeat(48) + CYAN + "║" + RESET);
-                System.out.println(CYAN + "╚" + "═".repeat(78) + "╝" + RESET + "\n");
+    @Override
+    @Transactional
+    public void run(String... args) {
+        if (activityRepository.count() > 0) {
+            log.info("✅ Dummy data already exists. Skipping initialization.");
+            return;
         }
+
+        log.info("🚀 Starting dummy data generation...");
+
+        // 1. Create and persist Activities
+        List<Activity> activities = createActivities();
+        for (Activity activity : activities) {
+            entityManager.persist(activity);
+        }
+        entityManager.flush();
+        log.info("✅ Created {} activities", activities.size());
+
+        // 2. Create and persist Packages
+        List<Package> packages = createPackagesOnly();
+        for (Package pkg : packages) {
+            entityManager.persist(pkg);
+        }
+        entityManager.flush();
+        log.info("✅ Created {} packages", packages.size());
+
+        // 3. Create and persist Plans with OrderedQuantities
+        List<Plan> plans = createPlans(packages, activities);
+        for (Plan plan : plans) {
+            // STEP PENTING: Save Plan dulu biar dapet ID
+            entityManager.persist(plan);
+            
+            // Setelah Plan punya ID, baru update dan save OrderedQuantities
+            if (plan.getOrderedQuantities() != null) {
+                for (OrderedQuantity oq : plan.getOrderedQuantities()) {
+                    // Set ID Plan yang baru digenerate ke OrderedQuantity
+                    oq.setPlanId(plan.getId()); 
+                    entityManager.persist(oq);
+                }
+            }
+        }
+        entityManager.flush();
+        log.info("✅ Created {} plans", plans.size());
+
+        log.info("🎉 Dummy data generation completed!");
+    }
+
+    private List<Activity> createActivities() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Activity> activities = new ArrayList<>();
+
+        // Flights
+        activities.add(Activity.builder()
+                .id(UUID.randomUUID().toString())
+                .activityName("Garuda Indonesia")
+                .activityType("Flight")
+                .activityItem("Jakarta (CGK) - Bali (DPS)")
+                .capacity(180)
+                .price(1500000L)
+                .startDate(now.plusDays(7))
+                .endDate(now.plusDays(7).plusHours(2))
+                .startLocation("Jakarta (CGK)")
+                .endLocation("Bali (DPS)")
+                .build());
+
+        activities.add(Activity.builder()
+                .id(UUID.randomUUID().toString())
+                .activityName("Lion Air")
+                .activityType("Flight")
+                .activityItem("Jakarta (CGK) - Yogyakarta (YIA)")
+                .capacity(150)
+                .price(800000L)
+                .startDate(now.plusDays(5))
+                .endDate(now.plusDays(5).plusHours(1))
+                .startLocation("Jakarta (CGK)")
+                .endLocation("Yogyakarta (YIA)")
+                .build());
+
+        // Accommodations
+        activities.add(Activity.builder()
+                .id(UUID.randomUUID().toString())
+                .activityName("Grand Hyatt Bali")
+                .activityType("Accommodation")
+                .activityItem("Deluxe Ocean View Room")
+                .capacity(50)
+                .price(2500000L)
+                .startDate(now.plusDays(7))
+                .endDate(now.plusDays(10))
+                .startLocation("Nusa Dua, Bali")
+                .endLocation("Nusa Dua, Bali")
+                .build());
+
+        activities.add(Activity.builder()
+                .id(UUID.randomUUID().toString())
+                .activityName("Tentrem Hotel Yogyakarta")
+                .activityType("Accommodation")
+                .activityItem("Superior Room")
+                .capacity(80)
+                .price(1200000L)
+                .startDate(now.plusDays(5))
+                .endDate(now.plusDays(8))
+                .startLocation("Yogyakarta")
+                .endLocation("Yogyakarta")
+                .build());
+
+        // Vehicles
+        activities.add(Activity.builder()
+                .id(UUID.randomUUID().toString())
+                .activityName("Bali Car Rental")
+                .activityType("Vehicle")
+                .activityItem("Toyota Avanza + Driver")
+                .capacity(20)
+                .price(500000L)
+                .startDate(now.plusDays(7))
+                .endDate(now.plusDays(10))
+                .startLocation("Bali Airport")
+                .endLocation("Bali Airport")
+                .build());
+
+        activities.add(Activity.builder()
+                .id(UUID.randomUUID().toString())
+                .activityName("Jogja Transport")
+                .activityType("Vehicle")
+                .activityItem("Innova Reborn + Driver")
+                .capacity(15)
+                .price(600000L)
+                .startDate(now.plusDays(5))
+                .endDate(now.plusDays(8))
+                .startLocation("Yogyakarta Airport")
+                .endLocation("Yogyakarta Airport")
+                .build());
+
+        return activities;
+    }
+
+    private List<Package> createPackagesOnly() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Package> packages = new ArrayList<>();
+
+        packages.add(Package.builder()
+                .id(UUID.randomUUID().toString())
+                .userId("user-001")
+                .packageName("Bali Paradise Getaway")
+                .quota(10)
+                .price(8500000L)
+                .startDate(now.plusDays(7))
+                .endDate(now.plusDays(10))
+                .status("Fulfilled")
+                .plans(new ArrayList<>())
+                .build());
+
+        packages.add(Package.builder()
+                .id(UUID.randomUUID().toString())
+                .userId("user-002")
+                .packageName("Yogyakarta Cultural Experience")
+                .quota(15)
+                .price(0L)
+                .startDate(now.plusDays(5))
+                .endDate(now.plusDays(8))
+                .status("Pending")
+                .plans(new ArrayList<>())
+                .build());
+
+        packages.add(Package.builder()
+                .id(UUID.randomUUID().toString())
+                .userId("user-003")
+                .packageName("Weekend Escape Package")
+                .quota(8)
+                .price(0L)
+                .startDate(now.plusDays(14))
+                .endDate(now.plusDays(16))
+                .status("Pending")
+                .plans(new ArrayList<>())
+                .build());
+
+        return packages;
+    }
+
+    private List<Plan> createPlans(List<Package> packages, List<Activity> activities) {
+        List<Plan> allPlans = new ArrayList<>();
+
+        Package pkg1 = packages.get(0);
+        
+        Activity flight1 = activities.stream()
+                .filter(a -> a.getActivityName().equals("Garuda Indonesia"))
+                .findFirst().orElse(null);
+        Activity hotel1 = activities.stream()
+                .filter(a -> a.getActivityName().equals("Grand Hyatt Bali"))
+                .findFirst().orElse(null);
+        Activity car1 = activities.stream()
+                .filter(a -> a.getActivityName().equals("Bali Car Rental"))
+                .findFirst().orElse(null);
+
+        if (flight1 != null) {
+            allPlans.add(createPlan(pkg1.getId(), "Flight", flight1, 2));
+        }
+        if (hotel1 != null) {
+            allPlans.add(createPlan(pkg1.getId(), "Accommodation", hotel1, 2));
+        }
+        if (car1 != null) {
+            allPlans.add(createPlan(pkg1.getId(), "Vehicle", car1, 1));
+        }
+
+        Package pkg2 = packages.get(1);
+        
+        Activity flight2 = activities.stream()
+                .filter(a -> a.getActivityName().equals("Lion Air"))
+                .findFirst().orElse(null);
+        Activity hotel2 = activities.stream()
+                .filter(a -> a.getActivityName().equals("Tentrem Hotel Yogyakarta"))
+                .findFirst().orElse(null);
+
+        if (flight2 != null) {
+            allPlans.add(createPlanUnfinished(pkg2.getId(), "Flight", 
+                    flight2.getStartDate(), flight2.getEndDate(),
+                    flight2.getStartLocation(), flight2.getEndLocation()));
+        }
+        if (hotel2 != null) {
+            allPlans.add(createPlanUnfinished(pkg2.getId(), "Accommodation",
+                    hotel2.getStartDate(), hotel2.getEndDate(),
+                    hotel2.getStartLocation(), hotel2.getEndLocation()));
+        }
+
+        return allPlans;
+    }
+
+    private Plan createPlan(String packageId, String activityType, Activity activity, int orderedQuota) {
+        // HAPUS .id(UUID.randomUUID()) DISINI
+        Plan plan = Plan.builder()
+                .packageId(packageId)
+                .activityType(activityType)
+                .price((long) (activity.getPrice() * orderedQuota))
+                .status("Fulfilled")
+                .startDate(activity.getStartDate())
+                .endDate(activity.getEndDate())
+                .startLocation(activity.getStartLocation())
+                .endLocation(activity.getEndLocation())
+                .orderedQuantities(new ArrayList<>())
+                .build();
+
+        // HAPUS .id(UUID.randomUUID()) DISINI JUGA
+        // DAN JANGAN SET planId DISINI, NANTI DI LOOP RUN() AJA
+        OrderedQuantity oq = OrderedQuantity.builder()
+                .activityId(activity.getId())
+                .orderedQuota(orderedQuota)
+                .quota(activity.getCapacity())
+                .price(activity.getPrice())
+                .activityName(activity.getActivityName())
+                .activityItem(activity.getActivityItem())
+                .startDate(activity.getStartDate())
+                .endDate(activity.getEndDate())
+                .build();
+
+        plan.getOrderedQuantities().add(oq);
+        return plan;
+    }
+
+    private Plan createPlanUnfinished(String packageId, String activityType, 
+                                      LocalDateTime start, LocalDateTime end,
+                                      String startLoc, String endLoc) {
+        // HAPUS .id(UUID.randomUUID()) DISINI
+        return Plan.builder()
+                .packageId(packageId)
+                .activityType(activityType)
+                .price(0L)
+                .status("Unfulfilled")
+                .startDate(start)
+                .endDate(end)
+                .startLocation(startLoc)
+                .endLocation(endLoc)
+                .orderedQuantities(new ArrayList<>())
+                .build();
+    }
 }
