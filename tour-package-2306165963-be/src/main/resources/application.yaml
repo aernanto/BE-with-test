@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: ti-2306165963
+
+  mvc:
+    hiddenmethod:
+      filter:
+        enabled: true
+
+  profiles:
+    active: 'dev'
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
